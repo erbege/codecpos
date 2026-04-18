@@ -1,92 +1,82 @@
-# CodecPOS — Modern Professional Point of Sale
+# CodecPOS - Sistem Kasir (POS) Profesional & Modern
 
-![CodecPOS Hero Banner](public/images/banner.png)
+CodecPOS adalah aplikasi Point of Sale (POS) mutakhir yang dirancang khusus untuk toko sepeda dan bisnis ritel modern. Dibangun dengan kombinasi teknologi **Laravel 11**, **React**, dan **Inertia.js**, CodecPOS menawarkan pengalaman pengguna yang sangat cepat, estetis, dan kaya fitur.
 
-CodecPOS is a sophisticated, single-screen Point of Sale ecosystem designed for high-performance retail operations. Built with **Laravel 11**, **React 18**, and **TypeScript**, it offers a seamless blend of power and aesthetics.
+![Screenshots Placeholder](https://via.placeholder.com/1200x600?text=CodecPOS+Interface+Preview)
 
-## ✨ Key Features
+## ✨ Fitur Utama
 
-- 🛒 **Rapid POS Interface**: A high-sensitivity checkout system optimized for speed and accuracy.
-- 📦 **Inventory Intelligence**: Advanced stock management with support for product variants and independent SKU tracking.
-- 📊 **Dynamic Analytics**: Real-time sales trends, financial reports, and inventory valuation dashboards.
-- 👥 **Master Data Management**: Comprehensive databases for customers, suppliers, and multi-user access control.
-- 🏢 **Multi-Outlet Ready**: Unified management for multiple business locations with independent stock tracking.
-- 🌙 **Modern Dark Mode**: A premium, high-contrast UI designed to reduce eye strain during long shifts.
+- **🛒 Kasir (POS) Responsif**: Antarmuka penjualan yang cepat dengan dukungan pemindaian barcode dan pengelolaan keranjang instan.
+- **📦 Manajemen Inventori**:
+    - Pelacakan stok secara real-time.
+    - Dukungan varian produk (ukuran, warna, tipe).
+    - Kategorisasi produk yang fleksibel.
+- **📈 Laporan & Analitik**:
+    - Dashboard visual dengan grafik tren penjualan menggunakan *Recharts*.
+    - Laporan laba rugi, nilai inventori, dan performa harian.
+- **🏪 Manajemen Multi-Outlet**: Kelola banyak cabang toko dengan stok terpisah dalam satu sistem terpusat.
+- **👥 Manajemen Pelanggan & Supplier**: Database lengkap untuk retensi pelanggan dan manajemen rantai pasok.
+- **🔐 Keamanan & Hak Akses**: Sistem peran (roles) dan izin (permissions) yang mendalam untuk Admin dan Kasir.
+- **🌗 Desain Premium**: Antarmuka modern dengan dukungan **Mode Gelap (Dark Mode)** dan estetika *Glassmorphism*.
 
-## 🛠️ Technical Stack
+## 🚀 Teknologi Utama
 
-- **Backend**: [Laravel](https://laravel.com/) (Expressive PHP Framework)
-- **Frontend**: [React](https://reactjs.org/) + [Inertia.js](https://inertiajs.com/) (The modern monolith)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/) (Utility-first CSS)
-- **State Management**: [Zustand](https://zustand-demo.pmnd.rs/) (Lightweight & Reactive)
-- **Typography**: Inter & Outfit (Modern Sans Serif)
-- **Icons**: [Lucide React](https://lucide.dev/) (Clean & Precise)
+- **Backend**: Laravel 11 (PHP 8.2+)
+- **Frontend**: React 18, TypeScript, Inertia.js
+- **Styling**: Tailwind CSS (Vite integration)
+- **State Management**: Zustand
+- **Charts**: Recharts
+- **Icons**: Lucide React
+- **Notifications**: Sonner
 
-## 🚀 Getting Started
+## 🛠️ Instalasi
 
-### Prerequisites
+Ikuti langkah-langkah di bawah ini untuk menjalankan project di lingkungan lokal:
 
-- PHP 8.3+
-- Node.js 20+
-- Composer
-- NPM
-
-### Installation
-
-1. **Clone the repository**
+1. **Clone repositori**
    ```bash
-   git clone https://github.com/your-username/codecpos.git
+   git clone https://github.com/username/codecpos.git
    cd codecpos
    ```
 
-2. **Install dependencies**
+2. **Instalasi dependensi PHP**
    ```bash
    composer install
+   ```
+
+3. **Instalasi dependensi JavaScript**
+   ```bash
    npm install
    ```
 
-3. **Configure Environment**
+4. **Konfigurasi Environment**
    ```bash
    cp .env.example .env
    php artisan key:generate
    ```
+   *Atur konfigurasi database di file `.env`.*
 
-4. **Database Setup**
+5. **Migrasi Database & Seeding**
    ```bash
-   # Configure your database in .env
    php artisan migrate --seed
    ```
 
-5. **Run Application**
+6. **Jalankan Aplikasi**
    ```bash
-   # Run development server
+   # Jalankan development server untuk frontend
    npm run dev
+
+   # Jalankan server Laravel (di terminal baru)
+   php artisan serve
    ```
 
-## 🏗️ Architecture
+## 📝 Catatan Pengembangan
 
-CodecPOS follows a clean, modular architecture. Every module (POS, Inventory, Reports) is designed to be highly decoupled for scalability.
+Aplikasi ini terus dikembangkan untuk fitur-fitur baru seperti integrasi pembayaran digital (QRIS) dan laporan yang lebih mendalam. 
 
-```text
-app/
-├── Models/        # Eloquent Data Structures
-├── Http/
-│   ├── Controllers/ # Inertia Request Handlers
-│   └── Requests/    # Validation Logic
-└── Services/      # Core Business Logic
-resources/
-└── js/
-    ├── Pages/      # React View Components
-    ├── Components/ # Reusable UI Elements
-    └── types/      # TypeScript Definitions
-```
+## ⚖️ Lisensi
 
-## 📝 License
-
-This project is open-sourced software licensed under the [MIT license](LICENSE).
+Project ini dilisensikan di bawah [MIT License](LICENSE).
 
 ---
-
-<p align="center">
-  Built with ❤️ by <b>CodecPOS Team</b>
-</p>
+*Dibuat dengan ❤️ untuk efisiensi bisnis Anda.*
