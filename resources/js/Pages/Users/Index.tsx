@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { PageProps, User, Outlet } from '@/types';
+import { useAppStore } from '@/stores/useAppStore';
 import { 
     Plus, 
     Edit2, 

@@ -29,6 +29,16 @@ export interface Category {
     updated_at: string;
 }
 
+export interface ProductVariant {
+    id: number;
+    product_id: number;
+    name: string;
+    sku: string;
+    price?: number;
+    stock: number;
+    image?: string;
+}
+
 export interface Product {
     id: number;
     category_id: number;
@@ -42,6 +52,8 @@ export interface Product {
     min_stock: number;
     image?: string;
     is_active: boolean;
+    has_variants: boolean;
+    variants?: ProductVariant[];
     created_at: string;
     updated_at: string;
 }
@@ -61,6 +73,7 @@ export interface SaleItem {
     id: number;
     sale_id: number;
     product_id: number;
+    product_variant_id?: number | null;
     product?: Product;
     product_name: string;
     qty: number;
@@ -74,6 +87,8 @@ export interface Sale {
     invoice_number: string;
     user_id: number;
     user?: User;
+    outlet_id?: number;
+    outlet?: Outlet;
     customer_id?: number;
     customer?: Customer;
     subtotal: number;

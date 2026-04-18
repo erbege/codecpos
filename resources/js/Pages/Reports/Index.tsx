@@ -256,7 +256,7 @@ export default function Index({ summary, chartData, filters, outlets, auth }: Pr
                                                 fontWeight: 'bold',
                                                 backgroundColor: '#fff'
                                             }} 
-                                            formatter={(val: number) => [formatCurrency(val), 'Penjualan']}
+                                            formatter={(val: any) => [formatCurrency(val), 'Penjualan']}
                                         />
                                         <Area 
                                             type="monotone" 

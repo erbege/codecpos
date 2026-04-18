@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { PageProps, Outlet } from '@/types';
+import { useAppStore } from '@/stores/useAppStore';
 import { Plus, Edit2, Trash2, X, Save, Store, MapPin, Phone, Mail } from 'lucide-react';
 import { useState } from 'react';
 

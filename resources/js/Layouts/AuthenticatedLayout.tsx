@@ -29,39 +29,24 @@ import { useAppStore } from '@/stores/useAppStore';
 import { Toaster, toast } from 'sonner';
 import GlobalDialog from '@/Components/GlobalDialog';
 
-interface NavItem {
-    name: string;
-    href: string;
-    icon: React.ElementType;
-    permission?: string;
-    active?: boolean;
-}
-
 export default function AuthenticatedLayout({ children }: PropsWithChildren) {
     const { auth, flash } = usePage<PageProps>().props;
     const { sidebarOpen, setSidebarOpen, theme, setTheme } = useAppStore();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const currentUrl = window.location.pathname;
 
-    // Handle Toast notifications via flash messages
-    useEffect(() => {
-        if (flash.success) {
-            toast.success(flash.success, {
-                className: 'rounded-xl font-bold border-l-4 border-emerald-500 shadow-xl',
-                duration: 4000
-            });
-        }
-        if (flash.error) {
-            toast.error(flash.error, {
-                className: 'rounded-xl font-bold border-l-4 border-red-500 shadow-xl',
-                duration: 5000
-            });
-        }
-    }, [flash.success, flash.error]);
-
     const can = (permission: string) => {
         return auth.permissions?.includes(permission);
     };
+
+    interface NavItem {
+        name: string;
+        href: string;
+        icon: React.ElementType;
+        permission?: string;
+        active?: boolean;
+        color?: string;
+    }
 
     interface NavGroup {
         title: string;
@@ -72,54 +57,56 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren) {
         {
             title: 'Utama',
             items: [
-                { name: 'Portal Beranda', href: '/portal', icon: Home, permission: 'dashboard.read' },
-                { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, permission: 'dashboard.read' },
+                { name: 'Portal', href: '/portal', icon: Home, permission: 'dashboard.read', color: 'text-indigo-500' },
+                { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, permission: 'dashboard.read', color: 'text-indigo-400' },
             ],
         },
         {
             title: 'POS',
             items: [
-                { name: 'POS Kasir', href: '/pos', icon: ShoppingCart, permission: 'sales.create' },
-                { name: 'Shift Kasir', href: '/shifts', icon: Clock, permission: 'sales.create' },
+                { name: 'POS Kasir', href: '/pos', icon: ShoppingCart, permission: 'sales.create', color: 'text-indigo-500' },
+                { name: 'Shift Kasir', href: '/shifts', icon: Clock, permission: 'sales.create', color: 'text-emerald-500' },
+                { name: 'Riwayat Sales', href: '/sales', icon: Receipt, color: 'text-blue-500' },
+                { name: 'Retur Barang', href: '/returns', icon: RotateCcw, color: 'text-orange-500' },
             ].filter((item) => !item.permission || can(item.permission)),
         },
         {
             title: 'Inventory',
             items: [
-                { name: 'Produk', href: '/products', icon: Package, permission: 'products.read' },
-                { name: 'Kategori', href: '/categories', icon: FolderTree, permission: 'categories.read' },
-                { name: 'Stock Opname', href: '/inventory/adjustment', icon: ClipboardList, permission: 'products.update' },
-                { name: 'Barang Masuk', href: '/purchases', icon: Package, permission: 'stock.read' },
+                { name: 'Produk', href: '/products', icon: Package, permission: 'products.read', color: 'text-rose-500' },
+                { name: 'Kategori', href: '/categories', icon: FolderTree, permission: 'categories.read', color: 'text-indigo-500' },
+                { name: 'Stock Opname', href: '/inventory/adjustment', icon: ClipboardList, permission: 'products.update', color: 'text-purple-500' },
+                { name: 'Barang Masuk', href: '/purchases', icon: Package, permission: 'stock.read', color: 'text-emerald-500' },
             ].filter((item) => !item.permission || can(item.permission)),
         },
         {
             title: 'Master Data',
             items: [
-                { name: 'Pelanggan', href: '/customers', icon: Users, permission: 'customers.read' },
-                { name: 'Pemasok', href: '/suppliers', icon: Users, permission: 'stock.read' },
+                { name: 'Pelanggan', href: '/customers', icon: Users, permission: 'customers.read', color: 'text-indigo-500' },
+                { name: 'Pemasok', href: '/suppliers', icon: Users, permission: 'stock.read', color: 'text-blue-500' },
             ].filter((item) => !item.permission || can(item.permission)),
         },
         {
             title: 'Laporan',
             items: [
-                { name: 'Pusat Analitik', href: '/reports', icon: BarChart3, permission: 'reports.view' },
-                { name: 'Riwayat Penjualan', href: '/sales', icon: Receipt, permission: 'sales.read' },
-                { name: 'Retur Barang', href: '/returns', icon: RotateCcw, permission: 'sales.read' },
+                { name: 'Analitik', href: '/reports', icon: BarChart3, permission: 'reports.view', color: 'text-indigo-600' },
+                { name: 'Riwayat Sales', href: '/sales', icon: Receipt, permission: 'sales.read', color: 'text-blue-500' },
+                { name: 'Retur Barang', href: '/returns', icon: RotateCcw, permission: 'sales.read', color: 'text-orange-500' },
             ].filter((item) => !item.permission || can(item.permission)),
         },
         {
             title: 'Pengaturan',
             items: [
-                { name: 'Kasir & User', href: '/users', icon: Users, permission: 'users.read' },
-                { name: 'Peran & Izin', href: '/roles', icon: Shield, permission: 'roles.manage' },
-                { name: 'Manajemen Cabang', href: '/outlets', icon: Store, permission: 'dashboard.view' },
-                { name: 'Pengaturan Toko', href: '/settings', icon: Settings, permission: 'dashboard.view' },
+                { name: 'Kasir & User', href: '/users', icon: Users, permission: 'users.read', color: 'text-indigo-500' },
+                { name: 'Peran & Izin', href: '/roles', icon: Shield, permission: 'roles.manage', color: 'text-red-500' },
+                { name: 'Cabang', href: '/outlets', icon: Store, permission: 'dashboard.view', color: 'text-emerald-600' },
+                { name: 'Toko', href: '/settings', icon: Settings, permission: 'dashboard.view', color: 'text-slate-500' },
             ].filter((item) => !item.permission || can(item.permission)),
         }
     ].filter(group => group.items.length > 0);
 
     const isActive = (href: string) => {
-        if (href === '/dashboard') return currentUrl === '/dashboard';
+        if (href === '/dashboard' || href === '/portal') return currentUrl === href;
         return currentUrl.startsWith(href);
     };
 
@@ -128,20 +115,14 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren) {
         setTheme(isDark ? 'light' : 'dark');
     };
 
-    const posRoutes = ['/pos', '/shifts', '/sales', '/returns', '/inventory/adjustment', '/customers', '/products'];
-    const isHeaderQuickMenu = posRoutes.some(route => currentUrl === route || currentUrl.startsWith(route + '/'));
     const isSidebarHidden = ['/pos', '/shifts'].some(route => currentUrl === route || currentUrl.startsWith(route + '/'));
 
-    const headerNavItems = [
-        { name: 'POS', href: '/pos', icon: ShoppingCart, color: 'text-indigo-500' },
-        { name: 'Shift', href: '/shifts', icon: Clock, color: 'text-emerald-500' },
-        { name: 'Analitik', href: '/reports', icon: BarChart3, color: 'text-indigo-600' },
-        { name: 'Sales', href: '/sales', icon: Receipt, color: 'text-blue-500' },
-        { name: 'Retur', href: '/returns', icon: RotateCcw, color: 'text-orange-500' },
-        { name: 'Opname', href: '/inventory/adjustment', icon: ClipboardList, color: 'text-purple-500' },
-        { name: 'Customers', href: '/customers', icon: Users, color: 'text-indigo-500' },
-        { name: 'Produk', href: '/products', icon: Package, color: 'text-rose-500' },
-    ];
+    // Contextual Header Logic
+    const activeGroup = navGroups.find(group => 
+        group.items.some(item => isActive(item.href))
+    );
+
+    const headerNavItems = activeGroup ? activeGroup.items : [];
 
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 transition-colors duration-300">
@@ -284,12 +265,18 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren) {
                         <Menu className="w-5 h-5" />
                     </button>
 
-                    {isHeaderQuickMenu && (
+                    {activeGroup && (
                         <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-1">
-                            <Link href="/portal" className="p-2 rounded-lg text-indigo-400 hover:text-white hover:bg-white/10 transition-all mr-2">
-                                <Home className="w-5 h-5" />
-                            </Link>
-                            <div className="w-px h-6 bg-indigo-800/50 mr-2" />
+                            {/* Portal Shortcut for modules */}
+                            {activeGroup.title !== 'Utama' && (
+                                <>
+                                    <Link href="/portal" className="p-2 rounded-lg text-indigo-400 hover:text-white hover:bg-white/10 transition-all mr-2" title="Back to Portal">
+                                        <Home className="w-5 h-5" />
+                                    </Link>
+                                    <div className="w-px h-6 bg-indigo-800/50 mr-2" />
+                                </>
+                            )}
+                            
                             {headerNavItems.map((item) => {
                                 const active = isActive(item.href);
                                 return (
@@ -302,7 +289,7 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren) {
                                                 : 'text-indigo-300 hover:bg-white/10 hover:text-white'
                                             }`}
                                     >
-                                        <item.icon className={`w-4 h-4 ${active ? 'text-white' : item.color} group-hover:scale-110 transition-transform`} />
+                                        <item.icon className={`w-4 h-4 ${active ? 'text-white' : (item.color || 'text-indigo-400')} group-hover:scale-110 transition-transform`} />
                                         <span className={`text-[11px] font-black uppercase tracking-wider ${active ? 'block' : 'hidden md:block'}`}>{item.name}</span>
                                     </Link>
                                 );

@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { PageProps, Product, Category, PaginatedData } from '@/types';
+import { useAppStore } from '@/stores/useAppStore';
 import { Plus, Search, Edit2, Trash2, AlertTriangle, Package } from 'lucide-react';
 import { useState } from 'react';
 

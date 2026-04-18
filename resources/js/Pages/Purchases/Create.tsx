@@ -123,14 +123,13 @@ export default function PurchasesCreate() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Clean data for backend (remove unique_id used only for frontend state)
-        const payload = {
-            ...form.data,
-            items: form.data.items.map(({ unique_id, ...rest }) => rest)
-        };
-        form.post('/purchases', {
-            data: payload as any
-        });
+        
+        form.transform((data) => ({
+            ...data,
+            items: data.items.map(({ unique_id, ...rest }) => rest)
+        }));
+        
+        form.post('/purchases');
     };
 
     return (

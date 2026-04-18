@@ -5,15 +5,31 @@ import { ArrowLeft, Save, Plus, Trash2, Camera, X } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 interface Props extends PageProps {
-    product: Product & { variants: any[] };
+    product: Product;
     categories: Category[];
+}
+
+interface FormData {
+    _method: string;
+    category_id: string;
+    name: string;
+    sku: string;
+    barcode: string;
+    price: string;
+    cost_price: string;
+    stock: string;
+    min_stock: string;
+    image: File | null;
+    is_active: boolean;
+    has_variants: boolean;
+    variants: any[];
 }
 
 export default function ProductEdit() {
     const { product, categories } = usePage<Props>().props;
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors } = useForm<FormData>({
         _method: 'put',
         category_id: product.category_id.toString(),
         name: product.name,
@@ -23,7 +39,7 @@ export default function ProductEdit() {
         cost_price: product.cost_price.toString(),
         stock: product.stock.toString(),
         min_stock: product.min_stock.toString(),
-        image: null as File | null,
+        image: null,
         is_active: product.is_active,
         has_variants: product.has_variants,
         variants: product.variants?.length ? product.variants.map((v: any) => ({
@@ -34,7 +50,7 @@ export default function ProductEdit() {
             price: v.price || '',
             image: null as File | null,
             preview: v.image ? `/storage/${v.image}` : null
-        })) : [] as any[]
+        })) : []
     });
 
     const addVariant = () => {

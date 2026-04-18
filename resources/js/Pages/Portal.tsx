@@ -1,192 +1,331 @@
-import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { 
-    ShoppingCart, 
-    Package,
-    Database,
-    BarChart3,
-    Settings,
-    LogOut,
+import { useState, useRef, useEffect, useMemo } from 'react';
+import GuestLayout from "@/Layouts/GuestLayout";
+import { PageProps } from "@/types";
+import { Head, Link, usePage } from "@inertiajs/react";
+import {
     ArrowUpRight,
-    Code,
-    Activity
-} from 'lucide-react';
-import { PageProps } from '@/types';
+    BarChart3,
+    Clock3,
+    Database,
+    LogOut,
+    Package,
+    Settings,
+    ShieldCheck,
+    ShoppingCart,
+    Sparkles,
+    Store,
+} from "lucide-react";
+
+const FALLBACK_QUOTES = [
+    { text: "Kualitas lebih penting daripada kuantitas. Satu home run jauh lebih baik daripada dua double.", author: "Steve Jobs" },
+    { text: "Bisnis yang hebat tidak dibangun oleh satu orang, mereka dibangun oleh tim.", author: "Steve Jobs" },
+    { text: "Kepuasan pelanggan adalah aset paling berharga dalam bisnis Anda.", author: "Anonim" },
+    { text: "Inovasi adalah hal yang membedakan antara pemimpin dan pengikut.", author: "Steve Jobs" },
+    { text: "Jangan menunggu kesempatan, ciptakanlah.", author: "Anonim" },
+    { text: "Fokuslah pada pelayanan, maka keuntungan akan mengikuti.", author: "Anonim" },
+    { text: "Keberhasilan adalah hasil dari persiapan, kerja keras, dan belajar dari kegagalan.", author: "Colin Powell" },
+    { text: "Cara terbaik untuk memprediksi masa depan adalah dengan menciptakannya.", author: "Peter Drucker" },
+];
 
 export default function Portal() {
     const { auth } = usePage<PageProps>().props;
+    
+    // Inisialisasi dengan kutipan lokal acak agar tidak kosong saat loading
+    const [quote, setQuote] = useState(() => 
+        FALLBACK_QUOTES[Math.floor(Math.random() * FALLBACK_QUOTES.length)]
+    );
+
+    useEffect(() => {
+        const fetchQuote = async () => {
+            try {
+                // Menggunakan ZenQuotes API sebagai sumber online
+                const response = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent('https://zenquotes.io/api/random'));
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const data = await response.json();
+                const quoteData = JSON.parse(data.contents);
+                
+                if (quoteData && quoteData.length > 0) {
+                    setQuote({
+                        text: quoteData[0].q,
+                        author: quoteData[0].a
+                    });
+                }
+            } catch (error) {
+                console.error("Gagal mengambil kutipan online, menggunakan fallback:", error);
+                // Fallback sudah terpasang di state awal
+            }
+        };
+
+        fetchQuote();
+    }, []);
+
+    const currentDate = new Intl.DateTimeFormat("id-ID", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+    }).format(new Date());
+
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        let greeting = "";
+        if (hour >= 0 && hour < 12) {
+            greeting = "Selamat pagi";
+        } else if (hour >= 12 && hour < 15) {
+            greeting = "Selamat siang";
+        } else if (hour >= 15 && hour < 18) {
+            greeting = "Selamat sore";
+        } else {
+            greeting = "Selamat malam";
+        }
+        return `${greeting}, ${auth.user?.name || "User"}!`;
+    };
 
     const menus = [
         {
-            name: 'POS Terminal',
-            label: 'POS',
-            desc: 'Real-time sales.',
-            href: route('pos'),
+            name: "Point of Sale",
+            label: "POS",
+            desc: "Transaksi cepat dan checkout instan.",
+            href: route("pos"),
             icon: ShoppingCart,
-            color: 'text-indigo-600',
-            bgColor: 'bg-indigo-50 dark:bg-indigo-500/20',
-            ringColor: 'ring-indigo-500/20 hover:ring-indigo-500/50',
-            glow: 'group-hover:shadow-indigo-500/10',
-            gradient: 'from-indigo-500/5 via-transparent to-transparent'
+            accent: "text-indigo-700 dark:text-indigo-300",
+            tone: "from-indigo-500 to-blue-500",
+            surface:
+                "border-indigo-200/80 bg-indigo-50/85 dark:border-indigo-500/30 dark:bg-indigo-500/10",
         },
         {
-            name: 'Inventory System',
-            label: 'STOCK',
-            desc: 'Inventory control.',
-            href: route('products.index'),
+            name: "Inventory",
+            label: "Stock",
+            desc: "Stok, varian, dan pergerakan barang.",
+            href: route("products.index"),
             icon: Package,
-            color: 'text-emerald-600',
-            bgColor: 'bg-emerald-50 dark:bg-emerald-500/20',
-            ringColor: 'ring-emerald-500/20 hover:ring-emerald-500/50',
-            glow: 'group-hover:shadow-emerald-500/10',
-            gradient: 'from-emerald-500/5 via-transparent to-transparent'
+            accent: "text-blue-700 dark:text-blue-300",
+            tone: "from-blue-500 to-indigo-500",
+            surface:
+                "border-blue-200/80 bg-blue-50/85 dark:border-blue-500/30 dark:bg-blue-500/10",
         },
         {
-            name: 'Master Data',
-            label: 'MASTER',
-            desc: 'Users & Data.',
-            href: route('customers.index'),
+            name: "Master Data",
+            label: "Data",
+            desc: "Pelanggan, user, dan data referensi.",
+            href: route("customers.index"),
             icon: Database,
-            color: 'text-blue-600',
-            bgColor: 'bg-blue-50 dark:bg-blue-500/20',
-            ringColor: 'ring-blue-500/20 hover:ring-blue-500/50',
-            glow: 'group-hover:shadow-blue-500/10',
-            gradient: 'from-blue-500/5 via-transparent to-transparent'
+            accent: "text-violet-700 dark:text-violet-300",
+            tone: "from-violet-500 to-indigo-500",
+            surface:
+                "border-violet-200/80 bg-violet-50/85 dark:border-violet-500/30 dark:bg-violet-500/10",
         },
         {
-            name: 'Business Reports',
-            label: 'REPORTS',
-            desc: 'Sales Analytics.',
-            href: route('reports.index'),
+            name: "Reports",
+            label: "Insight",
+            desc: "Analitik penjualan dan performa toko.",
+            href: route("reports.index"),
             icon: BarChart3,
-            color: 'text-purple-600',
-            bgColor: 'bg-purple-50 dark:bg-purple-500/20',
-            ringColor: 'ring-purple-500/20 hover:ring-purple-500/50',
-            glow: 'group-hover:shadow-purple-500/10',
-            gradient: 'from-purple-500/5 via-transparent to-transparent'
+            accent: "text-indigo-700 dark:text-indigo-300",
+            tone: "from-indigo-500 to-violet-500",
+            surface:
+                "border-indigo-200/80 bg-indigo-50/85 dark:border-indigo-500/30 dark:bg-indigo-500/10",
         },
         {
-            name: 'System Settings',
-            label: 'CONFIG',
-            desc: 'Preferences.',
-            href: route('settings.index'),
+            name: "Settings",
+            label: "Config",
+            desc: "Preferensi sistem dan konfigurasi outlet.",
+            href: route("settings.index"),
             icon: Settings,
-            color: 'text-slate-600',
-            bgColor: 'bg-slate-50 dark:bg-slate-500/20',
-            ringColor: 'ring-slate-500/20 hover:ring-slate-500/50',
-            glow: 'group-hover:shadow-slate-500/10',
-            gradient: 'from-slate-500/5 via-transparent to-transparent'
-        }
+            accent: "text-indigo-700 dark:text-indigo-300",
+            tone: "from-indigo-600 to-violet-500",
+            surface:
+                "border-indigo-200/80 bg-indigo-50/85 dark:border-indigo-500/30 dark:bg-indigo-500/10",
+        },
     ];
 
     return (
-        <GuestLayout maxWidth="max-w-6xl" showCard={false} showBranding={false}>
+        <GuestLayout
+            maxWidth="max-w-[1720px]"
+            showCard={false}
+            showBranding={false}
+        >
             <Head title="Portal" />
 
-            <div className="h-screen max-h-screen overflow-hidden flex flex-col py-4 px-6 md:px-12 selection:bg-indigo-500/30">
-                
-                {/* 1. Ultra-Compact Top Bar */}
-                <header className="flex items-center justify-between py-2 border-b border-slate-200/60 dark:border-slate-800/60 animate-in fade-in slide-in-from-top-4 duration-1000">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 transition-transform hover:rotate-6">
-                            <Code className="w-5 h-5 text-white" />
-                        </div>
-                        <h1 className="text-lg font-black text-slate-900 dark:text-white tracking-widest uppercase leading-none">
-                            Codec<span className="text-indigo-600">POS</span>
-                        </h1>
+            {/* <div className="h-screen overflow-hidden px-3 py-3 text-slate-900 dark:bg-[#070b18] dark:text-slate-100 sm:px-4"> */}
+                <div className="h-screen relative mx-auto flex h-full w-full max-w-[1720px] overflow-hidden rounded-[34px] border border-indigo-300/30  shadow-[0_28px_90px_rgba(7,11,24,0.55)] dark:border-indigo-500/20 dark:bg-[#0f1631]">
+                    <div className="pointer-events-none absolute inset-0">
+                        <div className="absolute -left-24 -top-16 h-72 w-72 rounded-full bg-indigo-400/25 blur-3xl dark:bg-indigo-500/20" />
+                        <div className="absolute -right-10 top-0 h-64 w-64 rounded-full bg-blue-400/20 blur-3xl dark:bg-blue-500/15" />
+                        <div className="absolute bottom-0 left-1/3 h-52 w-52 rounded-full bg-violet-400/20 blur-3xl dark:bg-violet-500/10" />
                     </div>
 
-                    <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-3">
-                            <div className="text-right hidden sm:block">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">
-                                    {auth.roles?.[0] || 'Administrator'}
-                                </p>
-                                <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                                    {auth.user?.name}
-                                </p>
-                            </div>
-                            <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 flex items-center justify-center font-black text-indigo-600 text-[10px] shadow-sm">
-                                {auth.user?.name?.charAt(0).toUpperCase() || '?'}
-                            </div>
-                        </div>
-                        <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
-                        <Link
-                            href={route('logout')}
-                            method="post"
-                            as="button"
-                            className="flex items-center gap-2 text-slate-400 hover:text-red-500 transition-colors uppercase text-[9px] font-black tracking-[0.2em]"
-                        >
-                            <LogOut className="w-3.5 h-3.5" />
-                            <span className="hidden md:inline">Logout</span>
-                        </Link>
-                    </div>
-                </header>
-
-                {/* 2. Main Content: Optimized for Viewport Center */}
-                <main className="flex-1 flex flex-col justify-center max-w-5xl mx-auto w-full py-4">
-                    <div className="mb-10 text-center animate-in fade-in duration-1000">
-                        <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-emerald-500/5 border border-emerald-500/20 mb-3 cursor-default">
-                           <Activity className="w-3 h-3 text-emerald-500" />
-                           <span className="text-[8px] font-black uppercase tracking-[0.2em] text-emerald-600">
-                               System Online
-                           </span>
-                        </div>
-                        <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none mb-3">
-                            Launch <span className="text-indigo-600">Workspace</span>
-                        </h2>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest max-w-md mx-auto leading-relaxed">
-                            Control Center & Operational Access Hub
-                        </p>
-                    </div>
-
-                    {/* Horizontal Balanced Grid (5 Columns) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 animate-in fade-in slide-in-from-bottom-6 duration-700">
-                        {menus.map((menu, idx) => (
-                            <Link
-                                key={menu.name}
-                                href={menu.href}
-                                className={`group relative flex flex-col p-5 rounded-[1.5rem] bg-white dark:bg-slate-950 bg-gradient-to-br ${menu.gradient} ring-1 ${menu.ringColor} transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl ${menu.glow}`}
-                                style={{ animationDelay: `${idx * 100}ms` }}
-                            >
-                                <div className={`w-10 h-10 rounded-xl ${menu.bgColor} flex items-center justify-center mb-5 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
-                                    <menu.icon className={`w-5 h-5 ${menu.color}`} />
-                                </div>
-                                
-                                <div className="flex-1">
-                                    <h3 className="text-[13px] font-black text-slate-900 dark:text-white uppercase tracking-[0.15em] mb-1.5 flex items-center justify-between">
-                                        {menu.label}
-                                        <ArrowUpRight className="w-3.5 h-3.5 opacity-0 -translate-y-1 translate-x-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 group-hover:translate-x-0" />
-                                    </h3>
-                                    <p className="text-[9px] text-slate-500 dark:text-slate-400 font-bold leading-tight">
-                                        {menu.desc}
-                                    </p>
-                                </div>
-
-                                <div className="mt-6 flex items-end justify-between">
-                                    <div className="w-12 h-0.5 rounded-full bg-slate-100 dark:bg-slate-900 overflow-hidden">
-                                        <div className={`h-full w-0 group-hover:w-full transition-all duration-700 bg-gradient-to-r ${menu.color.replace('text-', 'from-')}`} />
+                    <div className="relative flex h-full w-full flex-col gap-3 p-3 sm:p-4 lg:p-5">
+                        <header className="grid flex-none grid-cols-1 gap-3 lg:grid-cols-[1.45fr_0.5fr_0.5fr_0.5fr]">
+                            <div className="rounded-[28px] border border-indigo-300/30 bg-gradient-to-br from-indigo-950 via-indigo-900 to-blue-900 px-5 py-4 text-white shadow-lg shadow-indigo-950/30 dark:border-indigo-500/30">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex h-16 w-16 items-center justify-center rounded-[22px] bg-gradient-to-br from-indigo-300 to-blue-300 text-indigo-950 shadow-lg shadow-indigo-500/30">
+                                            <Store className="h-8 w-8" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
+                                                BikeShop POS
+                                            </p>
+                                            <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-[2rem]">
+                                                CodecPOS
+                                            </h1>
+                                            <p className="mt-1 text-sm text-slate-300">
+                                                Fast launcher for daily
+                                                operations.
+                                            </p>
+                                        </div>
                                     </div>
-                                    <span className="text-[8px] font-black text-slate-300 group-hover:text-indigo-500 transition-colors uppercase italic">v1.5</span>
+                                    <div className="hidden items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 lg:flex">
+                                        <Sparkles className="h-5 w-5 text-indigo-300" />
+                                        <span className="text-sm font-semibold">
+                                            Focused Control Surface
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="rounded-[26px] border border-indigo-200/80 bg-indigo-50/95 px-4 py-4 shadow-sm dark:border-indigo-500/30 dark:bg-indigo-500/10 flex items-center justify-center">
+                                <div className="flex items-center gap-3 w-full">
+                                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-indigo-500 text-white shadow-lg shadow-indigo-500/25">
+                                        <Clock3 className="h-6 w-6" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-indigo-700 dark:text-indigo-300">
+                                            Tanggal
+                                        </p>
+                                        <p className="truncate text-sm font-black text-indigo-900 dark:text-indigo-100">
+                                            {currentDate}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="rounded-[26px] border border-violet-200/80 bg-violet-50/95 px-4 py-4 shadow-sm dark:border-violet-500/30 dark:bg-violet-500/10 flex items-center justify-center">
+                                <div className="flex items-center gap-3 w-full">
+                                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-violet-500 text-white shadow-lg shadow-violet-500/25">
+                                        <ShieldCheck className="h-6 w-6" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-700 dark:text-violet-300">
+                                            Status
+                                        </p>
+                                        <p className="truncate text-sm font-black text-violet-900 dark:text-violet-100">
+                                            Ready
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <Link
+                                href={route("logout")}
+                                method="post"
+                                as="button"
+                                className="rounded-[26px] border border-blue-200/80 bg-blue-50/95 px-4 py-4 text-left shadow-sm transition hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 flex items-center justify-center"
+                            >
+                                <div className="flex items-center gap-3 w-full">
+                                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-lg shadow-blue-500/25">
+                                        <LogOut className="h-6 w-6" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-700 dark:text-blue-300">
+                                            Session
+                                        </p>
+                                        <p className="truncate text-sm font-black text-blue-900 dark:text-blue-100">
+                                            Logout
+                                        </p>
+                                    </div>
                                 </div>
                             </Link>
-                        ))}
-                    </div>
-                </main>
+                        </header>
 
-                {/* 3. Subtle Floating Footer Details */}
-                <footer className="py-4 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between animate-in fade-in duration-1000">
-                    <p className="text-slate-400 text-[8px] font-black uppercase tracking-[0.3em]">
-                        &copy; 2026 CODECPOS PROFESSIONAL • ALL RIGHTS RESERVED
-                    </p>
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-1 h-1 rounded-full bg-indigo-500 animate-pulse" />
-                            <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest italic">Connection Encrypted</span>
-                        </div>
+                        <section className="grid flex-none grid-cols-1 gap-3 lg:grid-cols-[1.55fr_0.45fr]">
+                            <div className="rounded-[28px] border border-indigo-200/80 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-indigo-500/30 dark:bg-indigo-500/10">
+                                <p className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white dark:bg-indigo-500">
+                                    <Sparkles className="h-3.5 w-3.5" />
+                                    Main Deck
+                                </p>
+                                <h2 className="mt-3 text-2xl font-black leading-tight tracking-tight text-slate-900 dark:text-white sm:text-[2rem]">
+                                    {getGreeting()}
+                                </h2>
+                                <div className="mt-2 flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                                    <div className="h-px w-8 bg-indigo-500/30" />
+                                    <p className="text-xs italic font-medium">
+                                        "{quote.text}" — <span className="font-bold not-italic text-indigo-600 dark:text-indigo-400">{quote.author}</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="rounded-[26px] border border-indigo-200/80 bg-indigo-50/85 p-4 shadow-sm dark:border-indigo-500/30 dark:bg-indigo-500/10">
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+                                        User
+                                    </p>
+                                    <p className="mt-2 truncate text-base font-black text-slate-900 dark:text-white">
+                                        {auth.user?.name}
+                                    </p>
+                                </div>
+                                <div className="rounded-[26px] border border-violet-200/80 bg-violet-50/85 p-4 shadow-sm dark:border-violet-500/30 dark:bg-violet-500/10">
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+                                        Role
+                                    </p>
+                                    <p className="mt-2 truncate text-base font-black text-slate-900 dark:text-white">
+                                        {auth.roles?.[0] || "Administrator"}
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <main className="min-h-0 flex-1">
+                            <div className="grid h-full grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+                                {menus.map((menu, idx) => (
+                                    <Link
+                                        key={menu.name}
+                                        href={menu.href}
+                                        className={`group relative flex h-full min-h-0 flex-col overflow-hidden rounded-[30px] border p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(15,23,42,0.12)] ${menu.surface}`}
+                                        style={{
+                                            animationDelay: `${idx * 80}ms`,
+                                        }}
+                                    >
+                                        <div className="absolute right-0 top-0 h-28 w-28 translate-x-8 -translate-y-8 rounded-full bg-white/60 blur-2xl dark:bg-white/10" />
+                                        <div className="relative flex h-full flex-col">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div
+                                                    className={`flex h-20 w-20 items-center justify-center rounded-[26px] bg-gradient-to-br ${menu.tone} text-white shadow-xl shadow-black/10`}
+                                                >
+                                                    <menu.icon className="h-10 w-10" />
+                                                </div>
+                                                <span
+                                                    className={`rounded-full bg-white/80 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] dark:bg-slate-900/70 ${menu.accent}`}
+                                                >
+                                                    {menu.label}
+                                                </span>
+                                            </div>
+
+                                            <div className="mt-4 flex-1">
+                                                <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+                                                    {menu.name}
+                                                </h3>
+                                                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                                                    {menu.desc}
+                                                </p>
+                                            </div>
+
+                                            <div className="mt-4 flex items-center justify-between border-t border-slate-200/70 pt-4 dark:border-slate-700/70">
+                                                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+                                                    Open Module
+                                                </span>
+                                                <ArrowUpRight
+                                                    className={`h-5 w-5 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 ${menu.accent}`}
+                                                />
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        </main>
                     </div>
-                </footer>
-            </div>
+                </div>
         </GuestLayout>
     );
 }
