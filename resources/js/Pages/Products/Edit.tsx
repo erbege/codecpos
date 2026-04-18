@@ -176,7 +176,7 @@ export default function ProductEdit() {
                                         </label>
                                     </div>
 
-                                    <div className="md:col-span-2">
+                                    <div className="md:col-span-1">
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Nama Produk *</label>
                                         <input
                                             type="text"
@@ -185,6 +185,18 @@ export default function ProductEdit() {
                                             className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-cyan-500/50"
                                         />
                                         {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
+                                    </div>
+
+                                    <div className="md:col-span-1">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Barcode</label>
+                                        <input
+                                            type="text"
+                                            value={data.barcode}
+                                            onChange={(e) => setData('barcode', e.target.value)}
+                                            className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-cyan-500/50"
+                                            placeholder="Scan atau input manual..."
+                                        />
+                                        {errors.barcode && <p className="mt-1 text-xs text-red-500">{errors.barcode}</p>}
                                     </div>
 
                                     <div>
@@ -210,6 +222,51 @@ export default function ProductEdit() {
                                         </div>
                                     )}
                                 </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                             <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Harga Jual *</label>
+                                <input
+                                    type="number"
+                                    value={data.price}
+                                    onChange={(e) => setData('price', e.target.value)}
+                                    className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm focus:ring-2 focus:ring-cyan-500/50"
+                                />
+                                {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price}</p>}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Harga Beli *</label>
+                                <input
+                                    type="number"
+                                    value={data.cost_price}
+                                    onChange={(e) => setData('cost_price', e.target.value)}
+                                    className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm focus:ring-2 focus:ring-cyan-500/50"
+                                />
+                                {errors.cost_price && <p className="mt-1 text-xs text-red-500">{errors.cost_price}</p>}
+                            </div>
+                            {!data.has_variants && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Stok Saat Ini</label>
+                                    <input
+                                        type="number"
+                                        value={data.stock}
+                                        onChange={(e) => setData('stock', e.target.value)}
+                                        className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm focus:ring-2 focus:ring-cyan-500/50"
+                                    />
+                                    {errors.stock && <p className="mt-1 text-xs text-red-500">{errors.stock}</p>}
+                                </div>
+                            )}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Stok Min.</label>
+                                <input
+                                    type="number"
+                                    value={data.min_stock}
+                                    onChange={(e) => setData('min_stock', e.target.value)}
+                                    className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm focus:ring-2 focus:ring-cyan-500/50"
+                                />
+                                {errors.min_stock && <p className="mt-1 text-xs text-red-500">{errors.min_stock}</p>}
                             </div>
                         </div>
                     </div>

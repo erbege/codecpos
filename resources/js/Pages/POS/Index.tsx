@@ -23,6 +23,8 @@ import {
     Printer,
     Users,
     RotateCcw,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import ThermalReceipt from '@/Components/ThermalReceipt';
@@ -67,6 +69,34 @@ export default function POS() {
     const [discountValue, setDiscountValue] = useState('');
 
     const searchRef = useRef<HTMLInputElement>(null);
+    const categoryScrollRef = useRef<HTMLDivElement>(null);
+    const [showLeftArrow, setShowLeftArrow] = useState(false);
+    const [showRightArrow, setShowRightArrow] = useState(false);
+
+    const checkScroll = () => {
+        if (categoryScrollRef.current) {
+            const { scrollLeft, scrollWidth, clientWidth } = categoryScrollRef.current;
+            setShowLeftArrow(scrollLeft > 0);
+            setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 5);
+        }
+    };
+
+    useEffect(() => {
+        checkScroll();
+        window.addEventListener('resize', checkScroll);
+        return () => window.removeEventListener('resize', checkScroll);
+    }, [categories]);
+
+    const scrollCategories = (direction: 'left' | 'right') => {
+        if (categoryScrollRef.current) {
+            const scrollAmount = 200;
+            categoryScrollRef.current.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+            setTimeout(checkScroll, 300); // Check after animation
+        }
+    };
 
     // Auto-print effect
     useEffect(() => {
@@ -81,6 +111,7 @@ export default function POS() {
     useEffect(() => {
         searchRef.current?.focus();
     }, []);
+
 
     // Keyboard shortcut
     useEffect(() => {
@@ -135,6 +166,32 @@ export default function POS() {
         const matchCategory = !selectedCategory || p.category_id === selectedCategory;
         return matchSearch && matchCategory;
     });
+
+    // Auto-add product on exact barcode match (for scanners)
+    useEffect(() => {
+        if (!search || search.length < 3) return;
+
+        const exactMatch = flattenedProducts.find(
+            (p) => p.barcode && p.barcode === search
+        );
+
+        if (exactMatch && exactMatch.stock > 0) {
+            cart.addItem(exactMatch);
+            setSearch('');
+            // Toast feedback міг add feedback here
+        }
+    }, [search, flattenedProducts]);
+
+    const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            // If there's only one product in the filtered list, add it
+            if (filteredProducts.length === 1 && filteredProducts[0].stock > 0) {
+                cart.addItem(filteredProducts[0]);
+                setSearch('');
+            }
+        }
+    };
 
     const subtotal = cart.getSubtotal();
     const totalGlobalDiscount = Number(globalDiscount);
@@ -255,28 +312,53 @@ export default function POS() {
                                 placeholder="Cari produk atau scan barcode... (F2)"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
+                                onKeyDown={handleSearchKeyDown}
                                 className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-200 text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                             />
                         </div>
-                        <div className="flex items-center justify-between">
-                            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
-                                <button
-                                    onClick={() => setSelectedCategory(null)}
-                                    className={`flex-shrink-0 px-3 py-1 rounded-md text-[11px] font-bold transition-all border
-                                        ${!selectedCategory ? 'bg-indigo-500 text-white border-indigo-600 shadow-sm shadow-indigo-500/20' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-50'}`}
-                                >
-                                    SEMUA
-                                </button>
-                                {categories.map((cat) => (
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="relative flex-1 min-w-0 group">
+                                {showLeftArrow && (
                                     <button
-                                        key={cat.id}
-                                        onClick={() => setSelectedCategory(cat.id)}
-                                        className={`flex-shrink-0 px-3 py-1 rounded-md text-[11px] font-bold transition-all border
-                                            ${selectedCategory === cat.id ? 'bg-indigo-500 text-white border-indigo-600 shadow-sm shadow-indigo-500/20' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-50'}`}
+                                        onClick={() => scrollCategories('left')}
+                                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center bg-white/90 dark:bg-gray-900/90 border border-gray-200 dark:border-gray-700 rounded-full shadow-md text-gray-600 dark:text-gray-400 hover:text-indigo-600 transition-all active:scale-95"
                                     >
-                                        {cat.name.toUpperCase()}
+                                        <ChevronLeft className="w-4 h-4" />
                                     </button>
-                                ))}
+                                )}
+                                
+                                <div 
+                                    ref={categoryScrollRef}
+                                    onScroll={checkScroll}
+                                    className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide scroll-smooth"
+                                >
+                                    <button
+                                        onClick={() => setSelectedCategory(null)}
+                                        className={`flex-shrink-0 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all border
+                                            ${!selectedCategory ? 'bg-indigo-500 text-white border-indigo-600 shadow-sm shadow-indigo-500/20' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-50'}`}
+                                    >
+                                        SEMUA
+                                    </button>
+                                    {categories.map((cat) => (
+                                        <button
+                                            key={cat.id}
+                                            onClick={() => setSelectedCategory(cat.id)}
+                                            className={`flex-shrink-0 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all border
+                                                ${selectedCategory === cat.id ? 'bg-indigo-500 text-white border-indigo-600 shadow-sm shadow-indigo-500/20' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-50'}`}
+                                        >
+                                            {cat.name.toUpperCase()}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {showRightArrow && (
+                                    <button
+                                        onClick={() => scrollCategories('right')}
+                                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center bg-white/90 dark:bg-gray-900/90 border border-gray-200 dark:border-gray-700 rounded-full shadow-md text-gray-600 dark:text-gray-400 hover:text-indigo-600 transition-all active:scale-95"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </button>
+                                )}
                             </div>
                             <div className="flex gap-1">
                                 <button
