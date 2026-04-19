@@ -49,8 +49,8 @@ export default function ProductIndex() {
             <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Katalog Produk</h1>
-                        <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider">Manajemen Inventaris Sepeda & Suku Cadang</p>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Katalog Produk</h1>
+                        <p className="text-sm text-gray-500 font-medium">Manajemen Inventaris Sepeda & Suku Cadang</p>
                     </div>
                     <Link
                         href="/products/create"
@@ -90,75 +90,85 @@ export default function ProductIndex() {
                         <table className="w-full text-xs">
                             <thead>
                                 <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                                    <th className="text-left px-4 py-3 text-gray-500 font-bold uppercase tracking-wider">Produk</th>
-                                    <th className="text-left px-4 py-3 text-gray-500 font-bold uppercase tracking-wider">Kategori</th>
-                                    <th className="text-left px-4 py-3 text-gray-500 font-bold uppercase tracking-wider">SKU</th>
-                                    <th className="text-right px-4 py-3 text-gray-500 font-bold uppercase tracking-wider">Harga</th>
-                                    <th className="text-right px-4 py-3 text-gray-500 font-bold uppercase tracking-wider">Stok</th>
-                                    <th className="text-center px-4 py-3 text-gray-500 font-bold uppercase tracking-wider">Status</th>
-                                    <th className="text-right px-4 py-3 text-gray-500 font-bold uppercase tracking-wider">Aksi</th>
+                                    <th className="text-left px-5 py-3.5 text-gray-500 text-xs font-semibold uppercase tracking-wider">Produk</th>
+                                    <th className="text-left px-5 py-3.5 text-gray-500 text-xs font-semibold uppercase tracking-wider">Kategori</th>
+                                    <th className="text-left px-5 py-3.5 text-gray-500 text-xs font-semibold uppercase tracking-wider">SKU</th>
+                                    <th className="text-right px-5 py-3.5 text-gray-500 text-xs font-semibold uppercase tracking-wider">Harga</th>
+                                    <th className="text-right px-5 py-3.5 text-gray-500 text-xs font-semibold uppercase tracking-wider">Stok</th>
+                                    <th className="text-center px-5 py-3.5 text-gray-500 text-xs font-semibold uppercase tracking-wider">Status</th>
+                                    <th className="text-right px-5 py-3.5 text-gray-500 text-xs font-semibold uppercase tracking-wider">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {products.data.length > 0 ? products.data.map((product) => (
-                                    <tr key={product.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-500/5 transition-colors">
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className="w-8 h-8 rounded bg-gray-50 dark:bg-gray-800 flex items-center justify-center border border-gray-100 dark:border-gray-700">
-                                                    <Package className="w-3.5 h-3.5 text-gray-400" />
+                                    <tr 
+                                        key={product.id} 
+                                        onClick={() => router.visit(`/products/${product.id}/edit`)}
+                                        className="border-b border-gray-100 dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
+                                    >
+                                        <td className="px-5 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded bg-white dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700 shadow-sm">
+                                                    <Package className="w-4 h-4 text-gray-400 group-hover:text-indigo-500 transition-colors" />
                                                 </div>
                                                 <div>
-                                                    <p className="font-bold text-gray-900 dark:text-white uppercase tracking-tight">{product.name}</p>
+                                                    <p className="text-sm font-semibold text-gray-900 dark:text-white capitalize tracking-tight">{product.name.toLowerCase()}</p>
                                                     {product.barcode && (
-                                                        <p className="text-[10px] text-gray-400 font-mono tracking-tighter">{product.barcode}</p>
+                                                        <p className="text-[11px] text-gray-400 font-mono mt-0.5">{product.barcode}</p>
                                                     )}
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-gray-500 font-medium">{product.category?.name}</td>
-                                        <td className="px-4 py-3 text-gray-400 font-mono text-[10px]">
+                                        <td className="px-5 py-4 text-gray-500 font-medium">{product.category?.name}</td>
+                                        <td className="px-5 py-4 text-gray-500 font-mono text-[11px]">
                                             {product.has_variants ? (
-                                                <span className="inline-flex px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-sans font-bold text-[9px] uppercase tracking-tighter">Variant</span>
+                                                <span className="inline-flex px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-sans font-semibold text-[10px] uppercase tracking-wider">Variant</span>
                                             ) : (
                                                 product.sku
                                             )}
                                         </td>
-                                        <td className="px-4 py-3 text-right text-indigo-600 font-black">
+                                        <td className="px-5 py-4 text-right text-indigo-600 font-semibold">
                                             {product.has_variants ? '-' : formatCurrency(Number(product.price))}
                                         </td>
-                                        <td className="px-4 py-3 text-right">
+                                        <td className="px-5 py-4 text-right">
                                             {product.has_variants ? (
-                                                <span className="text-gray-400 font-bold">{product.variants?.reduce((acc: number, v: any) => acc + v.stock, 0) || 0}</span>
+                                                <span className="text-gray-500 font-semibold">{product.variants?.reduce((acc: number, v: any) => acc + v.stock, 0) || 0}</span>
                                             ) : (
                                                 <div className="flex items-center justify-end gap-1.5">
                                                     {product.stock <= product.min_stock && (
-                                                        <AlertTriangle className="w-3 h-3 text-indigo-500" />
+                                                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
                                                     )}
-                                                    <span className={`font-black ${product.stock <= product.min_stock ? 'text-indigo-600' : 'text-gray-900 dark:text-white'}`}>
+                                                    <span className={`font-semibold ${product.stock <= product.min_stock ? 'text-amber-600 dark:text-amber-500' : 'text-gray-900 dark:text-white'}`}>
                                                         {product.stock}
                                                     </span>
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="px-4 py-3 text-center">
-                                            <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter
-                                                ${product.is_active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}>
+                                        <td className="px-5 py-4 text-center">
+                                            <span className={`inline-flex px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide
+                                                ${product.is_active ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20' : 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-400 border border-gray-200/50 dark:border-gray-700/50'}`}>
                                                 {product.is_active ? 'Aktif' : 'Nonaktif'}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center justify-end gap-1">
-                                                <Link
-                                                    href={`/products/${product.id}/edit`}
-                                                    className="w-7 h-7 flex items-center justify-center rounded bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 border border-gray-200 dark:border-gray-700 transition-colors"
-                                                >
-                                                    <Edit2 className="w-3 h-3" />
-                                                </Link>
+                                        <td className="px-5 py-4">
+                                            <div className="flex items-center justify-end gap-1.5">
                                                 <button
-                                                    onClick={() => handleDelete(product)}
-                                                    className="w-7 h-7 flex items-center justify-center rounded bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-red-500 dark:hover:text-red-400 border border-gray-200 dark:border-gray-700 transition-colors"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        router.visit(`/products/${product.id}/edit`);
+                                                    }}
+                                                    className="w-7 h-7 flex items-center justify-center rounded bg-white dark:bg-gray-800 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-200 transition-colors opacity-0 group-hover:opacity-100 shadow-sm"
                                                 >
-                                                    <Trash2 className="w-3 h-3" />
+                                                    <Edit2 className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDelete(product);
+                                                    }}
+                                                    className="w-7 h-7 flex items-center justify-center rounded bg-white dark:bg-gray-800 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors shadow-sm"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
                                             </div>
                                         </td>

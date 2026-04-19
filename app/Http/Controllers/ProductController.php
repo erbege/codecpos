@@ -38,6 +38,10 @@ class ProductController extends Controller
 
         return Inertia::render('Products/Create', [
             'categories' => $categories,
+            'taxSettings' => [
+                'tax_per_item' => filter_var(\App\Models\Setting::get('tax_per_item', 'false'), FILTER_VALIDATE_BOOLEAN),
+                'tax_percentage' => (float)\App\Models\Setting::get('tax_percentage', 11),
+            ]
         ]);
     }
 
@@ -58,6 +62,10 @@ class ProductController extends Controller
         return Inertia::render('Products/Edit', [
             'product' => $product->load('category', 'variants'),
             'categories' => $categories,
+            'taxSettings' => [
+                'tax_per_item' => filter_var(\App\Models\Setting::get('tax_per_item', 'false'), FILTER_VALIDATE_BOOLEAN),
+                'tax_percentage' => (float)\App\Models\Setting::get('tax_percentage', 11),
+            ]
         ]);
     }
 

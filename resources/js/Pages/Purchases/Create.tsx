@@ -1,8 +1,9 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, usePage, Link } from '@inertiajs/react';
 import { PageProps } from '@/types';
-import { Save, Plus, Trash2, ArrowLeft, Search } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { Save, Plus, Trash2, ArrowLeft, Search, Package, ShoppingBag, Receipt, Calendar } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 
 interface Supplier {
     id: number;
@@ -35,6 +36,18 @@ interface Props extends PageProps {
 export default function PurchasesCreate() {
     const { suppliers, products } = usePage<Props>().props;
     const [searchQuery, setSearchQuery] = useState('');
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'F2') {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     const form = useForm({
         supplier_id: '' as string | number,
@@ -87,6 +100,7 @@ export default function PurchasesCreate() {
         const existing = form.data.items.find(i => i.unique_id === item.unique_id);
         if (existing) {
             updateItemQty(item.unique_id, existing.qty + 1);
+            toast.info(`Jumlah ${item.name} diperbarui`);
         } else {
             form.setData('items', [
                 ...form.data.items,
@@ -99,6 +113,7 @@ export default function PurchasesCreate() {
                     unit_cost: 0 
                 }
             ]);
+            toast.success(`${item.name} ditambahkan`);
         }
         setSearchQuery('');
     };
@@ -117,6 +132,7 @@ export default function PurchasesCreate() {
 
     const removeItem = (uniqueId: string) => {
         form.setData('items', form.data.items.filter(item => item.unique_id !== uniqueId));
+        toast.error('Item dihapus dari daftar');
     };
 
     const totalAmount = form.data.items.reduce((sum, item) => sum + (item.qty * item.unit_cost), 0);
@@ -129,153 +145,187 @@ export default function PurchasesCreate() {
             items: data.items.map(({ unique_id, ...rest }) => rest)
         }));
         
-        form.post('/purchases');
+        form.post('/purchases', {
+            onSuccess: () => {
+                toast.success('Penerimaan stok (Purchase) berhasil disimpan!');
+            },
+            onError: () => {
+                toast.error('Gagal menyimpan transaksi. Periksa kembali form Anda.');
+            }
+        });
     };
 
     return (
         <AuthenticatedLayout>
-            <Head title="Input Barang Masuk" />
+            <Head title="Input Barang Masuk - Supply" />
 
-            <div className="max-w-5xl mx-auto space-y-6">
-                <div className="flex items-center gap-4">
-                    <Link href="/purchases" className="p-2 rounded-xl bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white transition shadow-sm">
-                        <ArrowLeft className="w-5 h-5" />
-                    </Link>
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Input Barang Masuk</h1>
-                        <p className="text-gray-500 dark:text-gray-400 mt-1">Catat struk/invoice pembelian dari supplier</p>
+            <div className="max-w-7xl mx-auto space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-2 border-b border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center gap-4">
+                        <Link href="/purchases" className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-indigo-600 transition shadow-sm">
+                            <ArrowLeft className="w-5 h-5" />
+                        </Link>
+                        <div>
+                            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Input Barang Masuk</h1>
+                            <p className="text-sm font-semibold text-gray-400">Penerimaan stok & restock inventory</p>
+                        </div>
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                     {/* Left Column: Form general */}
                     <div className="lg:col-span-1 space-y-6">
-                        <div className="bg-white dark:bg-gray-900/50 backdrop-blur-sm rounded-2xl p-5 border border-gray-200 dark:border-gray-800/50 shadow-sm">
-                            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Informasi Transaksi</h3>
+                        <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm space-y-6">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Receipt className="w-4 h-4 text-indigo-500" />
+                                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Detail Dokumen</h3>
+                            </div>
+                            
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Gudang / Pemasok</label>
+                                    <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Pemasok / Supplier</label>
                                     <select
                                         value={form.data.supplier_id}
-                                        onChange={e => form.setData('supplier_id', e.target.value)}
-                                        className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500/50"
-                                    >
-                                        <option value="">-- Pilih Pemasok --</option>
-                                        {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tanggal Input</label>
-                                    <input
-                                        type="date"
                                         required
-                                        value={form.data.purchase_date}
-                                        onChange={e => form.setData('purchase_date', e.target.value)}
-                                        className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500/50"
-                                    />
+                                        onChange={e => form.setData('supplier_id', e.target.value)}
+                                        className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none text-sm font-semibold text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500/20"
+                                    >
+                                        <option value="">Pilih Pemasok</option>
+                                        {suppliers.map(s => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>)}
+                                    </select>
+                                    {form.errors.supplier_id && <p className="mt-1 text-[10px] text-rose-500 font-bold">{form.errors.supplier_id}</p>}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Catatan / Keterangan</label>
+                                    <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Tanggal Terima</label>
+                                    <div className="relative">
+                                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                        <input
+                                            type="date"
+                                            required
+                                            value={form.data.purchase_date}
+                                            onChange={e => form.setData('purchase_date', e.target.value)}
+                                            className="w-full pl-12 pr-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none text-sm font-semibold text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500/20"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Catatan Internal</label>
                                     <textarea
                                         value={form.data.notes}
                                         onChange={e => form.setData('notes', e.target.value)}
                                         rows={3}
-                                        placeholder="e.g. Surat Jalan no..."
-                                        className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500/50"
+                                        placeholder="e.g. Nomor invoice supplier..."
+                                        className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none text-xs font-semibold text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500/20"
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl p-5 border border-emerald-100 dark:border-emerald-500/20">
-                            <p className="text-sm font-medium text-emerald-800 dark:text-emerald-400 mb-1">Total Pembayaran</p>
-                            <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                        <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase">Grand Total</span>
+                                <ShoppingBag className="w-4 h-4 text-emerald-500" />
+                            </div>
+                            <div className="text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-none mb-6">
                                 {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalAmount)}
-                            </p>
+                            </div>
                             <button
                                 type="submit"
                                 disabled={form.processing || form.data.items.length === 0}
-                                className="w-full mt-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-medium hover:from-emerald-400 hover:to-teal-500 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30"
+                                className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm tracking-widest disabled:opacity-50 transition-all shadow-lg shadow-indigo-500/20 group"
                             >
-                                <Save className="w-5 h-5" /> Simpan Barang Masuk
+                                <span className="flex items-center justify-center gap-2">
+                                    <Save className="w-5 h-5 group-hover:scale-110 transition-transform" /> SIMPAN PENERIMAAN
+                                </span>
                             </button>
                         </div>
                     </div>
 
                     {/* Right Column: Items */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white dark:bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-200 dark:border-gray-800/50 flex flex-col h-[600px]">
-                            <div className="p-4 border-b border-gray-200 dark:border-gray-800/50 bg-gray-50 dark:bg-transparent rounded-t-2xl">
+                    <div className="lg:col-span-3 space-y-6">
+                        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 flex flex-col h-[650px] shadow-sm overflow-hidden">
+                            <div className="p-5 border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20">
                                 <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                     <input
+                                        ref={searchInputRef}
                                         type="text"
-                                        placeholder="Cari produk produk untuk ditambahkan..."
+                                        placeholder="Cari produk... (Tekan F2)"
                                         value={searchQuery}
                                         onChange={e => setSearchQuery(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm focus:ring-2 focus:ring-emerald-500/50"
+                                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-sm font-semibold focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all outline-none"
                                     />
                                     {searchQuery && (
-                                        <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 max-h-60 overflow-y-auto z-10">
+                                        <div className="absolute left-0 right-0 top-full mt-3 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 max-h-72 overflow-y-auto z-20 animate-in fade-in slide-in-from-top-2 duration-300">
                                             {filteredItems.length > 0 ? filteredItems.map(p => (
                                                 <button
                                                     key={p.unique_id}
                                                     type="button"
                                                     onClick={() => addItem(p)}
-                                                    className="w-full text-left px-4 py-3 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 border-b border-gray-50 dark:border-gray-700/50 last:border-0 flex items-center justify-between group"
+                                                    className="w-full text-left px-5 py-4 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 border-b border-gray-50 dark:border-gray-800/50 last:border-0 flex items-center justify-between group"
                                                 >
                                                     <div>
-                                                        <p className="font-medium text-gray-900 dark:text-white text-sm">{p.name}</p>
-                                                        <p className="text-xs text-gray-500">Stok sisa: {p.stock} • {p.sku || '-'}</p>
+                                                        <p className="font-bold text-gray-900 dark:text-white text-sm uppercase tracking-tight">{p.name}</p>
+                                                        <p className="text-[10px] font-bold text-gray-400 mt-0.5">TERSEDIA: {p.stock} • {p.sku || 'TANPA SKU'}</p>
                                                     </div>
-                                                    <Plus className="w-4 h-4 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                                                        <Plus className="w-4 h-4 text-indigo-500" />
+                                                    </div>
                                                 </button>
                                             )) : (
-                                                <div className="p-4 text-center text-sm text-gray-500">Produk tidak ditemukan</div>
+                                                <div className="p-8 text-center text-xs font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Produk tidak ditemukan</div>
                                             )}
                                         </div>
                                     )}
                                 </div>
                             </div>
                             
-                            <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50 dark:bg-gray-900/20">
+                            <div className="flex-1 overflow-y-auto p-6 space-y-4">
                                 {form.data.items.length === 0 ? (
-                                    <div className="h-full flex flex-col items-center justify-center text-gray-400">
-                                        <p>Belum ada produk yang ditambahkan</p>
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-300 space-y-4">
+                                        <div className="p-4 rounded-3xl bg-gray-50 dark:bg-gray-800/50">
+                                            <Package className="w-16 h-16 opacity-10" />
+                                        </div>
+                                        <p className="text-xs font-bold uppercase tracking-widest italic">Belum ada item dalam daftar pembelian</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
-                                        {form.data.items.map((item, idx) => (
-                                            <div key={item.unique_id} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                                                <div className="flex-1">
-                                                    <p className="font-semibold text-gray-900 dark:text-white">{item.product_name}</p>
+                                        {form.data.items.map((item) => (
+                                            <div key={item.unique_id} className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row gap-4 items-start sm:items-center hover:shadow-md transition-shadow group">
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-bold text-gray-900 dark:text-white uppercase tracking-tight truncate">{item.product_name}</p>
+                                                    <p className="text-[10px] text-gray-400 font-bold mt-0.5">ITEM ID: {item.unique_id}</p>
                                                 </div>
-                                                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                                                    <div className="w-24">
-                                                        <label className="text-xs text-gray-500 block mb-1">Qty Tambah</label>
+                                                <div className="flex flex-wrap items-end gap-3 w-full sm:w-auto">
+                                                    <div className="w-20">
+                                                        <label className="text-[9px] font-bold text-gray-400 uppercase mb-1.5 block">QUANTITY</label>
                                                         <input 
                                                             type="number" min="1" 
                                                             value={item.qty} 
                                                             onChange={e => updateItemQty(item.unique_id, parseInt(e.target.value) || 1)}
-                                                            className="w-full px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm dark:text-white"
+                                                            className="w-full px-3 py-2 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 text-sm font-black text-center focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
                                                         />
                                                     </div>
                                                     <div className="w-32">
-                                                        <label className="text-xs text-gray-500 block mb-1">Harga Beli Satuan</label>
-                                                        <input 
-                                                            type="number" min="0" 
-                                                            value={item.unit_cost === 0 ? '' : item.unit_cost} 
-                                                            placeholder="0"
-                                                            onChange={e => updateItemCost(item.unique_id, parseInt(e.target.value) || 0)}
-                                                            className="w-full px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm dark:text-white"
-                                                        />
+                                                        <label className="text-[9px] font-bold text-gray-400 uppercase mb-1.5 block">HARGA BELI</label>
+                                                        <div className="relative">
+                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400">Rp</span>
+                                                            <input 
+                                                                type="number" min="0" 
+                                                                value={item.unit_cost === 0 ? '' : item.unit_cost} 
+                                                                placeholder="0"
+                                                                onChange={e => updateItemCost(item.unique_id, parseInt(e.target.value) || 0)}
+                                                                className="w-full pl-8 pr-3 py-2 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 text-sm font-black focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
+                                                            />
+                                                        </div>
                                                     </div>
-                                                    <div className="w-32 text-right pt-5">
-                                                        <p className="font-semibold text-gray-900 dark:text-emerald-400">
+                                                    <div className="w-32 text-right">
+                                                        <label className="text-[9px] font-bold text-gray-400 uppercase mb-1.5 block">SUBTOTAL</label>
+                                                        <p className="text-sm font-black text-indigo-600 dark:text-indigo-400 py-2">
                                                             {new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(item.qty * item.unit_cost)}
                                                         </p>
                                                     </div>
-                                                    <button type="button" onClick={() => removeItem(item.unique_id)} className="p-2 pt-5 text-gray-400 hover:text-red-500">
+                                                    <button type="button" onClick={() => removeItem(item.unique_id)} className="p-2 text-gray-300 hover:text-rose-500 transition-colors bg-gray-50 dark:bg-gray-800 rounded-xl">
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 </div>

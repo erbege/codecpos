@@ -107,7 +107,7 @@ export default function ThermalReceipt({ sale }: Props) {
 
             {/* Totals */}
             <div className="space-y-1 mb-4">
-                <div className="flex justify-between">
+                <div className="flex justify-between font-bold">
                     <span>SUBTOTAL</span>
                     <span>{formatCurrency(sale.subtotal)}</span>
                 </div>
@@ -117,13 +117,21 @@ export default function ThermalReceipt({ sale }: Props) {
                         <span>-{formatCurrency(sale.discount)}</span>
                     </div>
                 )}
+                
+                <div className="border-t border-black my-1 border-dotted"></div>
+                
+                <div className="flex justify-between text-[9px]">
+                    <span>TOTAL DPP</span>
+                    <span>{formatCurrency(Number(sale.total) + Number(sale.discount) - Number(sale.tax))}</span>
+                </div>
                 {Number(sale.tax) > 0 && (
-                    <div className="flex justify-between">
-                        <span>PAJAK</span>
+                    <div className="flex justify-between text-[9px]">
+                        <span>TOTAL PPN</span>
                         <span>{formatCurrency(sale.tax)}</span>
                     </div>
                 )}
-                <div className="flex justify-between font-black text-[12px] pt-1 border-t border-black">
+
+                <div className="flex justify-between font-black text-[12px] pt-1 border-t border-black mt-1">
                     <span>TOTAL</span>
                     <span>{formatCurrency(sale.total)}</span>
                 </div>

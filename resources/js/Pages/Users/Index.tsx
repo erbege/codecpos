@@ -15,6 +15,7 @@ import {
     Key 
 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface Props extends PageProps {
     users: User[];
@@ -57,11 +58,13 @@ export default function UserIndex() {
         e.preventDefault();
         if (editingUser) {
             form.put(route('users.update', editingUser.id), {
-                onSuccess: () => setShowModal(false),
+                onSuccess: () => { setShowModal(false); toast.success('Data pengguna berhasil diperbarui'); },
+                onError: () => toast.error('Gagal memperbarui pengguna', { description: 'Periksa formulir dan pastikan email belum digunakan.' })
             });
         } else {
             form.post(route('users.store'), {
-                onSuccess: () => setShowModal(false),
+                onSuccess: () => { setShowModal(false); toast.success('Pengguna baru berhasil ditambahkan'); },
+                onError: () => toast.error('Gagal menambahkan pengguna', { description: 'Periksa formulir dan pastikan email belum digunakan.' })
             });
         }
     };
@@ -75,7 +78,10 @@ export default function UserIndex() {
             confirmLabel: 'Ya, Hapus Akun',
             type: 'danger',
             onConfirm: () => {
-                form.delete(route('users.destroy', user.id));
+                form.delete(route('users.destroy', user.id), {
+                    onSuccess: () => toast.success('Akun pengguna berhasil dihapus'),
+                    onError: () => toast.error('Gagal menghapus akun pengguna')
+                });
             }
         });
     };

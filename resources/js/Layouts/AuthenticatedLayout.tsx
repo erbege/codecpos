@@ -24,6 +24,7 @@ import {
     BarChart3,
 } from 'lucide-react';
 import { PropsWithChildren, useState, useEffect } from 'react';
+import Tooltip from '@/Components/Tooltip';
 import { PageProps } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
 import { Toaster, toast } from 'sonner';
@@ -153,10 +154,10 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren) {
                                 <Code className="w-4 h-4 text-white" />
                             </div>
                             <div>
-                                <span className="text-base font-black text-white tracking-tight">
+                                <span className="text-base font-bold text-white tracking-tight">
                                     CodecPOS
                                 </span>
-                                <span className="block text-[9px] text-indigo-400 font-bold tracking-tighter uppercase -mt-1">
+                                <span className="block text-[10px] text-indigo-400 font-medium tracking-wide uppercase -mt-1">
                                     Management System
                                 </span>
                             </div>
@@ -184,7 +185,7 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren) {
                     {navGroups.map((group, groupIdx) => (
                         <div key={groupIdx}>
                             {sidebarOpen && (
-                                <p className="px-3 mb-1 text-[10px] font-black text-indigo-500/50 uppercase tracking-[0.2em]">
+                                <p className="px-3 mb-1 text-[11px] font-semibold text-indigo-400/80 uppercase tracking-wider">
                                     {group.title}
                                 </p>
                             )}
@@ -192,24 +193,25 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren) {
                                 {group.items.map((item) => {
                                     const active = isActive(item.href);
                                     return (
-                                        <Link
-                                            key={item.name}
-                                            href={item.href}
-                                            className={`group flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 relative
-                                                ${active
-                                                    ? 'bg-indigo-500/20 text-white font-bold'
-                                                    : 'text-indigo-300/70 hover:text-white hover:bg-white/5'
-                                                }
-                                                ${!sidebarOpen ? 'justify-center' : ''}`}
-                                        >
-                                            <item.icon className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${active ? 'text-indigo-400' : 'group-hover:scale-110'}`} />
-                                            {sidebarOpen && (
-                                                <span className="text-[13px]">{item.name}</span>
-                                            )}
-                                            {active && sidebarOpen && (
-                                                <div className="absolute right-0 top-2 bottom-2 w-1 bg-indigo-500 rounded-l-full shadow-[0_0_10px_indigo]" />
-                                            )}
-                                        </Link>
+                                        <Tooltip key={item.name} text={item.name} enabled={!sidebarOpen} position="right">
+                                            <Link
+                                                href={item.href}
+                                                className={`group flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 relative w-full
+                                                    ${active
+                                                        ? 'bg-indigo-500/20 text-white font-semibold'
+                                                        : 'text-indigo-300/70 hover:text-white hover:bg-white/5'
+                                                    }
+                                                    ${!sidebarOpen ? 'justify-center' : ''}`}
+                                            >
+                                                <item.icon className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${active ? 'text-indigo-400' : 'group-hover:scale-110'}`} />
+                                                {sidebarOpen && (
+                                                    <span className="text-sm font-medium">{item.name}</span>
+                                                )}
+                                                {active && sidebarOpen && (
+                                                    <div className="absolute right-0 top-2 bottom-2 w-1 bg-indigo-500 rounded-l-full shadow-[0_0_10px_indigo]" />
+                                                )}
+                                            </Link>
+                                        </Tooltip>
                                     );
                                 })}
                             </div>
@@ -225,8 +227,8 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren) {
                         </div>
                         {sidebarOpen && (
                             <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-white truncate">{auth.user.name}</p>
-                                <p className="text-[10px] text-indigo-400 truncate uppercase font-black tracking-tighter">
+                                <p className="text-sm font-semibold text-white truncate">{auth.user.name}</p>
+                                <p className="text-[11px] text-indigo-400 truncate uppercase font-medium tracking-wide">
                                     {auth.user.outlet?.name || 'No Outlet'}
                                 </p>
                             </div>

@@ -18,6 +18,7 @@ class Product extends Model
         'barcode',
         'price',
         'cost_price',
+        'margin',
         'stock',
         'min_stock',
         'image',
@@ -28,6 +29,7 @@ class Product extends Model
     protected $casts = [
         'price' => 'decimal:2',
         'cost_price' => 'decimal:2',
+        'margin' => 'decimal:2',
         'stock' => 'integer',
         'min_stock' => 'integer',
         'is_active' => 'boolean',

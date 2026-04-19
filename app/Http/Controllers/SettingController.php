@@ -27,6 +27,7 @@ class SettingController extends Controller
             'shop_npwp',
             'shop_footer_notes',
             'base_starting_cash',
+            'tax_per_item',
         ]);
 
         return Inertia::render('Settings/Index', [
@@ -40,6 +41,7 @@ class SettingController extends Controller
                 'shop_npwp' => $settings['shop_npwp'] ?? '',
                 'shop_footer_notes' => $settings['shop_footer_notes'] ?? 'Terima kasih telah berbelanja!',
                 'base_starting_cash' => (float)($settings['base_starting_cash'] ?? 0),
+                'tax_per_item' => filter_var($settings['tax_per_item'] ?? 'false', FILTER_VALIDATE_BOOLEAN),
             ]
         ]);
     }
@@ -53,17 +55,18 @@ class SettingController extends Controller
 
         $validated = $request->validate([
             'tax_enabled' => 'required|boolean',
-            'tax_percentage' => 'required_if:tax_enabled,true|numeric|min:0|max:100',
+            'tax_percentage' => 'nullable|numeric|min:0|max:100',
             'shop_name' => 'required|string|max:255',
             'shop_address' => 'nullable|string',
             'shop_phone' => 'nullable|string',
-            'shop_email' => 'nullable|email',
+            'shop_email' => 'nullable|string|max:255',
             'shop_npwp' => 'nullable|string',
             'shop_footer_notes' => 'nullable|string',
-            'base_starting_cash' => 'required|numeric|min:0',
+            'base_starting_cash' => 'nullable|numeric|min:0',
+            'tax_per_item' => 'nullable|boolean',
         ]);
 
-        Setting::set('tax_enabled', $validated['tax_enabled'] ? 'true' : 'false');
+        Setting::set('tax_enabled', !empty($validated['tax_enabled']) ? 'true' : 'false');
         Setting::set('tax_percentage', $validated['tax_percentage'] ?? 0);
         Setting::set('shop_name', $validated['shop_name']);
         Setting::set('shop_address', $validated['shop_address'] ?? '');
@@ -71,7 +74,8 @@ class SettingController extends Controller
         Setting::set('shop_email', $validated['shop_email'] ?? '');
         Setting::set('shop_npwp', $validated['shop_npwp'] ?? '');
         Setting::set('shop_footer_notes', $validated['shop_footer_notes'] ?? '');
-        Setting::set('base_starting_cash', $validated['base_starting_cash']);
+        Setting::set('base_starting_cash', $validated['base_starting_cash'] ?? 0);
+        Setting::set('tax_per_item', !empty($validated['tax_per_item']) ? 'true' : 'false');
 
         return back()->with('success', 'Pengaturan berhasil disimpan.');
     }

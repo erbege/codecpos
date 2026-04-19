@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, usePage, Link } from '@inertiajs/react';
 import { PageProps, PaginatedData } from '@/types';
-import { Search, Plus, Eye, Package, ArrowRightLeft } from 'lucide-react';
+import { Search, Plus, Eye, Package, Receipt, Calendar, User, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 
 interface Purchase {
@@ -39,67 +39,100 @@ export default function PurchasesIndex() {
 
     return (
         <AuthenticatedLayout>
-            <Head title="Barang Masuk / Pembelian" />
+            <Head title="Barang Masuk - Inventory" />
 
-            <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="max-w-7xl mx-auto space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-2">
                     <div>
-                        <h1 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Barang Masuk</h1>
-                        <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider">Log Pembelian & Restock Inventory</p>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Barang Masuk</h1>
+                        <p className="text-sm font-semibold text-gray-400">Arsip pembelian stok dari Pemasok</p>
                     </div>
                     <Link
                         href="/purchases/create"
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-bold text-xs hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-500/20 uppercase tracking-widest"
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 uppercase tracking-widest group"
                     >
-                        <Plus className="w-3.5 h-3.5" /> TRANSAKSI BARU
+                        <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" /> TRANSAKSI BARU
                     </Link>
                 </div>
 
-                <form onSubmit={handleSearch} className="relative max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Cari Nomor Referensi..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-200 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    />
-                </form>
+                {/* Filters & Search */}
+                <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col md:flex-row items-center gap-4">
+                    <form onSubmit={handleSearch} className="relative flex-1 w-full">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Cari Nomor Referensi / Supplier..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full pl-12 pr-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none text-sm font-semibold text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500/20"
+                        />
+                    </form>
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest px-4 border-l border-gray-100 dark:border-gray-800 hidden md:flex">
+                        <Receipt className="w-3.5 h-3.5" /> Total Records: {purchases.total}
+                    </div>
+                </div>
 
-                <div className="rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+                {/* Table Section */}
+                <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-xs">
+                        <table className="w-full text-left">
                             <thead>
-                                <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                                    <th className="text-left px-4 py-3 text-gray-500 font-bold uppercase tracking-wider">Tanggal</th>
-                                    <th className="text-left px-4 py-3 text-gray-500 font-bold uppercase tracking-wider">Referensi</th>
-                                    <th className="text-left px-4 py-3 text-gray-500 font-bold uppercase tracking-wider">Pemasok</th>
-                                    <th className="text-left px-4 py-3 text-gray-500 font-bold uppercase tracking-wider">Input Oleh</th>
-                                    <th className="text-right px-4 py-3 text-gray-500 font-bold uppercase tracking-wider">Total Nilai</th>
-                                    <th className="text-right px-4 py-3 text-gray-500 font-bold uppercase tracking-wider">Aksi</th>
+                                <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+                                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tanggal</th>
+                                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Referensi</th>
+                                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pemasok</th>
+                                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Operator</th>
+                                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Nilai Pembelian</th>
+                                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Detail</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                                 {purchases.data.length > 0 ? purchases.data.map((purchase) => (
-                                    <tr key={purchase.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-500/5 transition-colors">
-                                        <td className="px-4 py-3 text-gray-500 font-bold uppercase tracking-widest text-[10px] whitespace-nowrap">{formatDate(purchase.purchase_date)}</td>
-                                        <td className="px-4 py-3 text-indigo-600 font-black uppercase tracking-tighter">{purchase.reference_number}</td>
-                                        <td className="px-4 py-3 text-gray-900 dark:text-white font-bold uppercase tracking-tight">{purchase.supplier?.name || '-'}</td>
-                                        <td className="px-4 py-3 text-gray-500 font-medium">{purchase.user?.name}</td>
-                                        <td className="px-4 py-3 text-right font-black text-gray-900 dark:text-white tracking-tighter">{formatCurrency(purchase.total_amount)}</td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center justify-end gap-1">
-                                                <Link href={`/purchases/${purchase.id}`} className="w-7 h-7 flex items-center justify-center rounded bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 border border-gray-200 dark:border-gray-700 transition-colors">
-                                                    <Eye className="w-3.5 h-3.5" />
-                                                </Link>
+                                    <tr 
+                                        key={purchase.id} 
+                                        className="hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5 transition-all cursor-pointer group"
+                                        onClick={() => router.get(`/purchases/${purchase.id}`)}
+                                    >
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-400">
+                                                    <Calendar className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-xs font-bold text-gray-600 dark:text-gray-400">{formatDate(purchase.purchase_date)}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-tight">{purchase.reference_number}</td>
+                                        <td className="px-6 py-4">
+                                            <p className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-tight">{purchase.supplier?.name || 'UMUM'}</p>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] text-slate-500 font-bold">
+                                                    {purchase.user?.name?.charAt(0).toUpperCase()}
+                                                </div>
+                                                <span className="text-xs text-gray-500 font-medium">{purchase.user?.name || '-'}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className="text-sm font-black text-gray-900 dark:text-white tracking-tight">{formatCurrency(purchase.total_amount)}</span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex justify-end">
+                                                <div className="w-8 h-8 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 flex items-center justify-center text-gray-400 group-hover:text-indigo-600 transition-all opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0">
+                                                    <ArrowRight className="w-4 h-4" />
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan={6} className="px-5 py-16 text-center">
-                                            <Package className="w-12 h-12 mx-auto mb-3 text-gray-400 dark:text-gray-600" />
-                                            <p className="text-gray-500 dark:text-gray-400">Belum ada data barang masuk.</p>
+                                        <td colSpan={6} className="px-6 py-24 text-center">
+                                            <div className="max-w-xs mx-auto space-y-4">
+                                                <div className="w-16 h-16 rounded-3xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center mx-auto text-gray-300">
+                                                    <Package className="w-8 h-8" />
+                                                </div>
+                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Belum ada catatan barang masuk ditemukan.</p>
+                                            </div>
                                         </td>
                                     </tr>
                                 )}
@@ -108,13 +141,13 @@ export default function PurchasesIndex() {
                     </div>
 
                     {purchases.last_page > 1 && (
-                        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-transparent">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{purchases.from}-{purchases.to} / {purchases.total}</p>
-                            <div className="flex gap-1">
+                        <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/30 dark:bg-transparent">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{purchases.from}-{purchases.to} / {purchases.total} RECORDS</p>
+                            <div className="flex gap-2">
                                 {purchases.links.map((link, i) => (
                                     <Link key={i} href={link.url || '#'}
                                         preserveState
-                                        className={`px-3 py-1 rounded text-[10px] font-black transition-all ${link.active ? 'bg-indigo-500 text-white' : link.url ? 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800' : 'text-gray-300 cursor-not-allowed'}`}
+                                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition-all ${link.active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : link.url ? 'text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-800 border border-transparent hover:border-gray-100 dark:hover:border-gray-700' : 'text-gray-300 cursor-not-allowed'}`}
                                         dangerouslySetInnerHTML={{ __html: link.label }}
                                     />
                                 ))}

@@ -33,6 +33,10 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        if ($request->has('redirect_to')) {
+            return redirect($request->redirect_to);
+        }
+
         return redirect()->intended(route('portal', absolute: false));
     }
 

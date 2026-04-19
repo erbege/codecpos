@@ -88,7 +88,7 @@ class PurchaseController extends Controller
         $this->authorize('stock.read');
 
         return Inertia::render('Purchases/Show', [
-            'purchase' => $purchase->load('items.product', 'user', 'supplier'),
+            'purchase' => $purchase->load(['items.product', 'items.productVariant', 'user', 'supplier', 'outlet']),
         ]);
     }
 }

@@ -113,11 +113,49 @@ class ReportController extends Controller
             ->groupBy('payment_method')
             ->get();
 
+        // 4. Daily Sales Trend for Chart
+        $dailyTrend = Sale::where('status', 'completed')
+            ->when($outletId, fn($q) => $q->where('outlet_id', $outletId))
+            ->whereBetween('created_at', [$dateFrom, $dateTo . ' 23:59:59'])
+            ->selectRaw('DATE(created_at) as date, SUM(total) as amount')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        // 5. Growth Calculation (Current vs Previous Period)
+        $duration = (strtotime($dateTo) - strtotime($dateFrom)) / 86400;
+        $prevDateTo = date('Y-m-d', strtotime($dateFrom . ' -1 day'));
+        $prevDateFrom = date('Y-m-d', strtotime($prevDateTo . " -{$duration} days"));
+
+        $currentTotal = Sale::where('status', 'completed')
+            ->when($outletId, fn($q) => $q->where('outlet_id', $outletId))
+            ->whereBetween('created_at', [$dateFrom, $dateTo . ' 23:59:59'])
+            ->sum('total');
+
+        $prevTotal = Sale::where('status', 'completed')
+            ->when($outletId, fn($q) => $q->where('outlet_id', $outletId))
+            ->whereBetween('created_at', [$prevDateFrom, $prevDateTo . ' 23:59:59'])
+            ->sum('total');
+
+        $growth = 0;
+        if ($prevTotal > 0) {
+            $growth = round((($currentTotal - $prevTotal) / $prevTotal) * 100, 2);
+        } elseif ($currentTotal > 0) {
+            $growth = 100;
+        }
+
         return Inertia::render('Reports/Sales', [
             'data' => [
                 'byProduct' => $salesByProduct,
                 'byCategory' => $salesByCategory,
-                'byPayment' => $salesByPayment
+                'byPayment' => $salesByPayment,
+                'dailyTrend' => $dailyTrend,
+                'summary' => [
+                    'total_sales' => (float)$currentTotal,
+                    'prev_total_sales' => (float)$prevTotal,
+                    'growth' => (float)$growth,
+                    'is_up' => $currentTotal >= $prevTotal
+                ]
             ],
             'filters' => $filters,
             'outlets' => Outlet::all()

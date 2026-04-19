@@ -4,6 +4,7 @@ import { PageProps, Outlet } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
 import { Plus, Edit2, Trash2, X, Save, Store, MapPin, Phone, Mail } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface Props extends PageProps {
     outlets: Outlet[];
@@ -44,11 +45,13 @@ export default function OutletIndex() {
         e.preventDefault();
         if (editingOutlet) {
             form.put(route('outlets.update', editingOutlet.id), {
-                onSuccess: () => setShowModal(false),
+                onSuccess: () => { setShowModal(false); toast.success('Cabang berhasil diperbarui'); },
+                onError: () => toast.error('Gagal memperbarui cabang', { description: 'Periksa kembali isian formulir.' })
             });
         } else {
             form.post(route('outlets.store'), {
-                onSuccess: () => setShowModal(false),
+                onSuccess: () => { setShowModal(false); toast.success('Cabang baru berhasil ditambahkan'); },
+                onError: () => toast.error('Gagal menambahkan cabang', { description: 'Periksa kembali isian formulir.' })
             });
         }
     };
@@ -62,7 +65,10 @@ export default function OutletIndex() {
             confirmLabel: 'Ya, Hapus Cabang',
             type: 'danger',
             onConfirm: () => {
-                form.delete(route('outlets.destroy', outlet.id));
+                form.delete(route('outlets.destroy', outlet.id), {
+                    onSuccess: () => toast.success('Cabang berhasil dihapus'),
+                    onError: () => toast.error('Gagal menghapus cabang')
+                });
             }
         });
     };

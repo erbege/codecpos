@@ -74,12 +74,14 @@ class SaleController extends Controller
 
         $taxEnabled = filter_var(\App\Models\Setting::get('tax_enabled', 'false'), FILTER_VALIDATE_BOOLEAN);
         $taxPercentage = (float)\App\Models\Setting::get('tax_percentage', 11);
+        $taxPerItem = filter_var(\App\Models\Setting::get('tax_per_item', 'false'), FILTER_VALIDATE_BOOLEAN);
 
         return Inertia::render('POS/Index', [
             'products' => $products,
             'categories' => $categories,
             'customers' => $customers,
             'taxRate' => $taxEnabled ? $taxPercentage : 0,
+            'taxPerItem' => $taxPerItem,
         ]);
     }
 

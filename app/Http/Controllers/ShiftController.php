@@ -17,12 +17,14 @@ class ShiftController extends Controller
     {
         $this->authorize('sales.create'); // Hanya yang bisa jualan (Kasir) yang butuh shift
 
-        $activeShift = Shift::where('user_id', Auth::id())
+        $activeShift = Shift::with(['user', 'outlet'])
+            ->where('user_id', Auth::id())
             ->where('status', 'open')
             ->first();
 
         // Riwayat shift 10 terakhir
-        $historyShifts = Shift::where('user_id', Auth::id())
+        $historyShifts = Shift::with(['user', 'outlet'])
+            ->where('user_id', Auth::id())
             ->where('status', 'closed')
             ->orderBy('id', 'desc')
             ->take(10)
