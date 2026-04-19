@@ -115,30 +115,42 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Penjualan 7 Hari</h3>
                         </div>
-                        {weeklySales.length > 0 ? (
-                            <div className="flex items-end gap-1.5 h-36 pt-4">
+                        {weeklySales && weeklySales.length > 0 ? (
+                            <div className="flex items-end gap-1.5 h-36 pt-6 px-1">
                                 {weeklySales.map((day) => {
-                                    const height = Math.max((Number(day.total) / maxSale) * 100, 4);
+                                    const amount = Number(day.total || 0);
+                                    const height = maxSale > 0 ? Math.max((amount / maxSale) * 100, 2) : 2;
                                     const dayName = new Date(day.date).toLocaleDateString('id-ID', { weekday: 'short' });
+                                    
                                     return (
-                                        <div key={day.date} className="flex-1 flex flex-col items-center gap-1.5">
-                                            <div className="w-full flex justify-center group relative">
+                                        <div key={day.date} className="flex-1 flex flex-col items-center gap-2">
+                                            <div className="w-full h-full flex items-end justify-center group relative pt-2">
+                                                {/* Bar Rail (Subtle background) */}
+                                                <div className="absolute inset-0 w-full max-w-[24px] mx-auto bg-gray-50 dark:bg-gray-800/50 rounded-t sm:rounded-t-md -z-0" />
+                                                
+                                                {/* Actual Bar */}
                                                 <div
-                                                    className="w-full max-w-[24px] rounded-t sm:rounded-t-md bg-indigo-500 transition-all duration-500 hover:bg-indigo-400 cursor-pointer"
+                                                    className={`w-full max-w-[24px] rounded-t sm:rounded-t-md transition-all duration-700 cursor-pointer relative z-10
+                                                        ${amount > 0 ? 'bg-indigo-500 hover:bg-indigo-400 shadow-[0_-4px_12px_rgba(99,102,241,0.2)]' : 'bg-gray-100 dark:bg-gray-800'}
+                                                    `}
                                                     style={{ height: `${height}%` }}
                                                 />
-                                                <span className="absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-gray-900 text-white text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                                                    {formatCurrency(Number(day.total))}
-                                                </span>
+                                                
+                                                {/* Tooltip */}
+                                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded bg-gray-900 text-white text-[10px] font-black opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap z-20 shadow-xl border border-gray-700 translate-y-2 group-hover:translate-y-0">
+                                                    {formatCurrency(amount)}
+                                                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45" />
+                                                </div>
                                             </div>
-                                            <span className="text-[9px] font-bold text-gray-400 uppercase">{dayName}</span>
+                                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">{dayName}</span>
                                         </div>
                                     );
                                 })}
                             </div>
                         ) : (
-                            <div className="h-40 flex items-center justify-center text-gray-400 text-xs uppercase font-bold tracking-widest">
-                                NO SALES DATA
+                            <div className="h-36 flex flex-col items-center justify-center text-gray-300 dark:text-gray-700">
+                                <TrendingUp className="w-8 h-8 mb-2 opacity-20" />
+                                <p className="text-[10px] font-black uppercase tracking-widest">Belum Ada Data</p>
                             </div>
                         )}
                     </div>

@@ -37,14 +37,24 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
-        // Weekly sales for chart
-        $weeklySales = Sale::where('outlet_id', $outletId)
+        // Weekly sales for chart (Last 7 days)
+        $rawWeeklySales = Sale::where('outlet_id', $outletId)
             ->where('status', 'completed')
-            ->where('created_at', '>=', now()->subDays(7))
+            ->where('created_at', '>=', now()->subDays(6)->startOfDay())
             ->selectRaw('DATE(created_at) as date, SUM(total) as total, COUNT(*) as count')
             ->groupBy('date')
-            ->orderBy('date')
-            ->get();
+            ->get()
+            ->keyBy('date');
+
+        $weeklySales = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $weeklySales[] = [
+                'date' => $date,
+                'total' => $rawWeeklySales->has($date) ? (float)$rawWeeklySales->get($date)->total : 0,
+                'count' => $rawWeeklySales->has($date) ? (int)$rawWeeklySales->get($date)->count : 0,
+            ];
+        }
 
         return Inertia::render('Dashboard', [
             'stats' => [

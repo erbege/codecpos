@@ -42,7 +42,7 @@ class CustomerController extends Controller
 
         Customer::create($validated);
 
-        return redirect()->route('customers.index')
+        return back()
             ->with('success', 'Customer berhasil ditambahkan.');
     }
 
