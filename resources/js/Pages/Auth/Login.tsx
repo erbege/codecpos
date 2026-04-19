@@ -100,7 +100,7 @@ export default function Login({
                     </button>
                     
                     <p className="mt-6 text-center text-[10px] font-bold text-slate-600 uppercase tracking-widest">
-                        Belum punya akun? <Link href="/register" className="text-indigo-500 hover:text-indigo-400">Hubungi Administrator</Link>
+                        Hubungi Administrator untuk mendapatkan akses akun
                     </p>
                 </div>
             </form>

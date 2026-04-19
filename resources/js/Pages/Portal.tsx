@@ -84,14 +84,15 @@ export default function Portal() {
     const menus = [
         {
             name: "Point of Sale",
-            label: "POS",
+            label: "CORE",
             desc: "Transaksi cepat dan checkout instan.",
             href: route("pos"),
             icon: ShoppingCart,
-            accent: "text-indigo-700 dark:text-indigo-300",
-            tone: "from-indigo-500 to-blue-500",
-            surface:
-                "border-indigo-200/80 bg-indigo-50/85 dark:border-indigo-500/30 dark:bg-indigo-500/10",
+            isPrimary: true,
+            accent: "text-white",
+            tone: "from-white to-indigo-100",
+            iconBrandColor: "text-indigo-600",
+            surface: "border-indigo-600 bg-indigo-600 shadow-indigo-600/20 dark:border-indigo-500 dark:bg-indigo-600",
         },
         {
             name: "Inventory",
@@ -221,17 +222,17 @@ export default function Portal() {
                                 href={route("logout")}
                                 method="post"
                                 as="button"
-                                className="rounded-[26px] border border-blue-200/80 bg-blue-50/95 px-4 py-4 text-left shadow-sm transition hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 flex items-center justify-center"
+                                className="rounded-[26px] border border-rose-200/80 bg-rose-50/95 px-4 py-4 text-left shadow-sm transition hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 flex items-center justify-center"
                             >
                                 <div className="flex items-center gap-3 w-full">
-                                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-lg shadow-blue-500/25">
+                                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-rose-500 text-white shadow-lg shadow-rose-500/25">
                                         <LogOut className="h-6 w-6" />
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-700 dark:text-blue-300">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-rose-700 dark:text-rose-300">
                                             Session
                                         </p>
-                                        <p className="truncate text-sm font-black text-blue-900 dark:text-blue-100">
+                                        <p className="truncate text-sm font-black text-rose-900 dark:text-rose-100">
                                             Logout
                                         </p>
                                     </div>
@@ -282,7 +283,7 @@ export default function Portal() {
                                     <Link
                                         key={menu.name}
                                         href={menu.href}
-                                        className={`group relative flex h-full min-h-0 flex-col overflow-hidden rounded-[30px] border p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(15,23,42,0.12)] ${menu.surface}`}
+                                        className={`group relative flex h-full min-h-0 flex-col overflow-hidden rounded-[30px] border p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(15,23,42,0.12)] ${menu.surface} ${menu.isPrimary ? 'ring-4 ring-indigo-500/10' : ''}`}
                                         style={{
                                             animationDelay: `${idx * 80}ms`,
                                         }}
@@ -291,28 +292,28 @@ export default function Portal() {
                                         <div className="relative flex h-full flex-col">
                                             <div className="flex items-start justify-between gap-3">
                                                 <div
-                                                    className={`flex h-20 w-20 items-center justify-center rounded-[26px] bg-gradient-to-br ${menu.tone} text-white shadow-xl shadow-black/10`}
+                                                    className={`flex h-20 w-20 items-center justify-center rounded-[26px] bg-gradient-to-br ${menu.tone} ${menu.isPrimary ? 'text-indigo-600' : 'text-white'} shadow-xl shadow-black/10`}
                                                 >
                                                     <menu.icon className="h-10 w-10" />
                                                 </div>
                                                 <span
-                                                    className={`rounded-full bg-white/80 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] dark:bg-slate-900/70 ${menu.accent}`}
+                                                    className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${menu.isPrimary ? 'bg-white text-indigo-700' : 'bg-white/80 dark:bg-slate-900/70 ' + menu.accent}`}
                                                 >
                                                     {menu.label}
                                                 </span>
                                             </div>
 
                                             <div className="mt-4 flex-1">
-                                                <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+                                                <h3 className={`text-xl font-black tracking-tight ${menu.isPrimary ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
                                                     {menu.name}
                                                 </h3>
-                                                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                                                <p className={`mt-2 text-sm leading-6 ${menu.isPrimary ? 'text-indigo-50' : 'text-slate-600 dark:text-slate-300'}`}>
                                                     {menu.desc}
                                                 </p>
                                             </div>
 
-                                            <div className="mt-4 flex items-center justify-between border-t border-slate-200/70 pt-4 dark:border-slate-700/70">
-                                                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+                                            <div className={`mt-4 flex items-center justify-between border-t pt-4 ${menu.isPrimary ? 'border-white/20' : 'border-slate-200/70 dark:border-slate-700/70'}`}>
+                                                <span className={`text-xs font-semibold uppercase tracking-[0.16em] ${menu.isPrimary ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'}`}>
                                                     Open Module
                                                 </span>
                                                 <ArrowUpRight
