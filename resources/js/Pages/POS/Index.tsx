@@ -27,6 +27,7 @@ import {
     ChevronRight,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 import ThermalReceipt from '@/Components/ThermalReceipt';
 import Drawer from '@/Components/Drawer';
 import Modal from '@/Components/Modal';
@@ -141,21 +142,123 @@ export default function POS() {
     }, []);
 
 
+    const handleApplyItemDiscount = (productId: number | string) => {
+        const item = cart.items.find(i => i.product.id === productId);
+        if (!item) return;
+
+        let nominal = 0;
+        const val = Number(discountValue);
+        
+        if (discountMode === 'percent') {
+            nominal = (item.product.price * item.qty * val) / 100;
+        } else {
+            nominal = val;
+        }
+
+        // Validate: cannot exceed item total price
+        const maxDiscount = item.product.price * item.qty;
+        if (nominal > maxDiscount) nominal = maxDiscount;
+
+        cart.updateDiscount(productId, nominal);
+        setEditingDiscountId(null);
+        setDiscountValue('');
+    };
+
+    const subtotal = cart.getSubtotal();
+    const totalGlobalDiscount = globalDiscountMode === 'percent' 
+        ? (subtotal * Number(globalDiscount)) / 100 
+        : Number(globalDiscount);
+    
+    // Logic for tax display and total calculation
+    // If taxPerItem is ON, price is INCLUSIVE of tax.
+    // If taxPerItem is OFF, price is EXCLUSIVE of tax.
+    const taxAmount = taxPerItem 
+        ? (subtotal * taxRate) / (100 + taxRate) 
+        : (subtotal * taxRate) / 100;
+
+    const total = taxPerItem
+        ? Math.max(0, subtotal - totalGlobalDiscount)
+        : Math.max(0, (subtotal + taxAmount) - totalGlobalDiscount);
+
+    const displaySubtotal = taxPerItem ? subtotal - taxAmount : subtotal;
+    const change = Number(paidAmount) - total;
+
     // Keyboard shortcut
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            // Prevent shortcuts if typing in input/textarea
+            const isTyping = ['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName);
+            
             if (e.key === 'F2') {
                 e.preventDefault();
                 searchRef.current?.focus();
+            }
+            if (e.key === 'F5') { // Shortcut to clear cart
+                e.preventDefault();
+                if (confirm('Kosongkan keranjang?')) {
+                    cart.clearCart();
+                    toast.success('Keranjang dikosongkan');
+                }
+            }
+            if (e.key === 'F8') {
+                e.preventDefault();
+                setShowCustomerModal(true);
             }
             if (e.key === 'F9' && cart.items.length > 0) {
                 e.preventDefault();
                 setShowCheckout(true);
             }
+
+            // Cart Navigation (Only if not typing)
+            if (!isTyping && cart.items.length > 0) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const next = cart.selectedIndex === null || cart.selectedIndex >= cart.items.length - 1 ? 0 : cart.selectedIndex + 1;
+                    cart.setSelectedIndex(next);
+                }
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const prev = cart.selectedIndex === null || cart.selectedIndex <= 0 ? cart.items.length - 1 : cart.selectedIndex - 1;
+                    cart.setSelectedIndex(prev);
+                }
+
+                // Manipulation for selected item
+                if (cart.selectedIndex !== null) {
+                    const selectedItem = cart.items[cart.selectedIndex];
+                    if (e.key === '+' || e.key === '=') {
+                        e.preventDefault();
+                        cart.updateQuantity(selectedItem.product.id, selectedItem.qty + 1);
+                    }
+                    if (e.key === '-' || e.key === '_') {
+                        e.preventDefault();
+                        cart.updateQuantity(selectedItem.product.id, selectedItem.qty - 1);
+                    }
+                    if (e.key === 'Delete') {
+                        e.preventDefault();
+                        cart.removeItem(selectedItem.product.id);
+                    }
+                }
+            }
+            
+            // Payment Method Selection (Active only when checkout drawer is open)
+            if (showCheckout && !isTyping) {
+                if (e.key === '1') setPaymentMethod('cash');
+                if (e.key === '2') setPaymentMethod('transfer');
+                if (e.key === '3') setPaymentMethod('qris');
+                if (e.key === '4') setPaymentMethod('debit');
+                if (e.key === 'Enter' && Number(paidAmount) >= total) {
+                    e.preventDefault();
+                    handleCheckout();
+                }
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    setShowCheckout(false);
+                }
+            }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [cart.items.length]);
+    }, [cart.items, cart.selectedIndex, showCheckout, paidAmount, total]);
 
     // Success Modal Shortcuts
     useEffect(() => {
@@ -240,25 +343,8 @@ export default function POS() {
         }
     };
 
-    const subtotal = cart.getSubtotal();
-    const totalGlobalDiscount = globalDiscountMode === 'percent' 
-        ? (subtotal * Number(globalDiscount)) / 100 
-        : Number(globalDiscount);
+    // Moving calculations up to fix TS error
     
-    // Logic for tax display and total calculation
-    // If taxPerItem is ON, price is INCLUSIVE of tax.
-    // If taxPerItem is OFF, price is EXCLUSIVE of tax.
-    const taxAmount = taxPerItem 
-        ? (subtotal * taxRate) / (100 + taxRate) 
-        : (subtotal * taxRate) / 100;
-
-    const total = taxPerItem
-        ? Math.max(0, subtotal - totalGlobalDiscount)
-        : Math.max(0, (subtotal + taxAmount) - totalGlobalDiscount);
-
-    const displaySubtotal = taxPerItem ? subtotal - taxAmount : subtotal;
-    const change = Number(paidAmount) - total;
-
     const quickAmounts = useMemo(() => {
         const t = Math.ceil(total);
         if (t <= 0) return [10000, 20000, 50000, 100000];
@@ -336,27 +422,7 @@ export default function POS() {
         });
     };
 
-    const handleApplyItemDiscount = (productId: number | string) => {
-        const item = cart.items.find(i => i.product.id === productId);
-        if (!item) return;
 
-        let nominal = 0;
-        const val = Number(discountValue);
-        
-        if (discountMode === 'percent') {
-            nominal = (item.product.price * item.qty * val) / 100;
-        } else {
-            nominal = val;
-        }
-
-        // Validate: cannot exceed item total price
-        const maxDiscount = item.product.price * item.qty;
-        if (nominal > maxDiscount) nominal = maxDiscount;
-
-        cart.updateDiscount(productId, nominal);
-        setEditingDiscountId(null);
-        setDiscountValue('');
-    };
 
 
     return (
@@ -525,13 +591,23 @@ export default function POS() {
                             <ShoppingCart className="w-4 h-4 text-indigo-500" />
                             <h3 className="font-semibold text-gray-900 dark:text-white text-xs uppercase tracking-wider">Keranjang</h3>
                         </div>
-                        <button onClick={() => cart.clearCart()} className="text-[10px] text-gray-400 hover:text-red-500 transition-colors font-semibold uppercase tracking-tight">Hapus</button>
+                        <button onClick={() => { if (confirm('Kosongkan keranjang?')) cart.clearCart() }} className="text-[10px] text-gray-400 hover:text-red-500 transition-colors font-semibold uppercase tracking-tight">Hapus [F5]</button>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-2 space-y-2">
                         {cart.items.length > 0 ? (
-                            cart.items.map((item) => (
-                                <div key={item.product.id} className="p-2.5 rounded-md bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 space-y-2.5">
+                            cart.items.map((item, idx) => (
+                                <div 
+                                    key={item.product.id} 
+                                    onClick={() => cart.setSelectedIndex(idx)}
+                                    className={`p-2.5 rounded-md border transition-all duration-200 space-y-2.5 cursor-pointer relative
+                                        ${cart.selectedIndex === idx 
+                                            ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-500 ring-2 ring-indigo-500/20 shadow-md' 
+                                            : 'bg-gray-50 dark:bg-gray-800/40 border-gray-200 dark:border-gray-700 hover:border-indigo-300'}`}
+                                >
+                                    {cart.selectedIndex === idx && (
+                                        <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-full" />
+                                    )}
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="min-w-0">
                                             <p className="text-xs font-semibold text-gray-900 dark:text-white truncate tracking-tight">{item.product.name}</p>
@@ -634,7 +710,7 @@ export default function POS() {
                             disabled={cart.items.length === 0}
                             className="w-full py-3.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 shadow-md active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-wider"
                         >
-                            <CreditCard className="w-4 h-4" /> BAYAR SEKARANG (F9)
+                            <CreditCard className="w-4 h-4" /> BAYAR SEKARANG [F9]
                         </button>
                     </div>
                 </div>
@@ -695,16 +771,19 @@ export default function POS() {
                                     { id: 'transfer', label: 'TF BANK', icon: CreditCard, activeColors: 'bg-blue-500 border-blue-500 shadow-blue-500/20' },
                                     { id: 'qris', label: 'QRIS', icon: Smartphone, activeColors: 'bg-violet-500 border-violet-500 shadow-violet-500/20' },
                                     { id: 'debit', label: 'DEBIT', icon: CreditCard, activeColors: 'bg-sky-500 border-sky-500 shadow-sky-500/20' },
-                                ].map((m) => (
+                                ].map((m, idx) => (
                                     <button
                                         key={m.id}
                                         onClick={() => setPaymentMethod(m.id as any)}
-                                        className={`py-2 px-2 rounded-xl border-[1.5px] transition-all flex flex-row items-center justify-center gap-1.5 overflow-hidden group
+                                        className={`relative py-2 px-2 rounded-xl border-[1.5px] transition-all flex flex-row items-center justify-center gap-1.5 overflow-hidden group
                                             ${paymentMethod === m.id 
                                                 ? `${m.activeColors} text-white scale-[1.02] shadow-lg` 
                                                 : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-300 dark:hover:border-slate-700'}
                                         `}
                                     >
+                                        <div className={`absolute top-0 left-0 px-1 py-0.5 text-[8px] font-black leading-none rounded-br-md ${paymentMethod === m.id ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                                            [{idx + 1}]
+                                        </div>
                                         <m.icon className={`w-3.5 h-3.5 ${paymentMethod === m.id ? 'text-white' : 'text-slate-400'}`} />
                                         <span className="text-[11px] font-bold uppercase whitespace-nowrap">{m.label}</span>
                                     </button>
@@ -761,6 +840,8 @@ export default function POS() {
                                         className="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm active:scale-90 transition-transform"
                                     >
                                         <Plus className="w-4 h-4" />
+                                        <span className="sr-only">Tambah Pelanggan</span>
+                                        <div className="absolute -top-1 -right-1 px-1 bg-indigo-500 text-white text-[8px] font-black rounded-full">F8</div>
                                     </button>
                                 </div>
                             </section>

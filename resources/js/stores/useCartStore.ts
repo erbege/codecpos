@@ -3,6 +3,8 @@ import { CartItem, Product } from '@/types';
 
 interface CartStore {
     items: CartItem[];
+    selectedIndex: number | null;
+    setSelectedIndex: (index: number | null) => void;
     addItem: (product: Product) => void;
     removeItem: (productId: number | string) => void;
     updateQuantity: (productId: number | string, qty: number) => void;
@@ -14,6 +16,9 @@ interface CartStore {
 
 export const useCartStore = create<CartStore>((set, get) => ({
     items: [],
+    selectedIndex: null,
+
+    setSelectedIndex: (index: number | null) => set({ selectedIndex: index }),
 
     addItem: (product: any) => {
         set((state) => {
@@ -29,16 +34,31 @@ export const useCartStore = create<CartStore>((set, get) => ({
                     ),
                 };
             }
+            const newItems = [...state.items, { product, qty: 1, discount: 0 }];
             return {
-                items: [...state.items, { product, qty: 1, discount: 0 }],
+                items: newItems,
+                selectedIndex: newItems.length - 1
             };
         });
     },
 
     removeItem: (productId: number | string) => {
-        set((state) => ({
-            items: state.items.filter((i) => i.product.id !== productId),
-        }));
+        set((state) => {
+            const index = state.items.findIndex(i => i.product.id === productId);
+            const newItems = state.items.filter((i) => i.product.id !== productId);
+            let nextIndex = state.selectedIndex;
+            
+            if (newItems.length === 0) {
+                nextIndex = null;
+            } else if (state.selectedIndex !== null && state.selectedIndex >= newItems.length) {
+                nextIndex = newItems.length - 1;
+            }
+
+            return {
+                items: newItems,
+                selectedIndex: nextIndex
+            };
+        });
     },
 
     updateQuantity: (productId: number | string, qty: number) => {
@@ -61,7 +81,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
         }));
     },
 
-    clearCart: () => set({ items: [] }),
+    clearCart: () => set({ items: [], selectedIndex: null }),
 
     getSubtotal: () => {
         return get().items.reduce(

@@ -1,8 +1,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, usePage, Link } from '@inertiajs/react';
+import { Head, useForm, usePage, Link, router } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import { Calculator, PlayCircle, StopCircle, Receipt, AlertCircle, Clock, Wallet, History, ArrowRight, Printer, Eye, EyeOff, User } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { toast } from 'sonner';
 import ShiftThermalReceipt from '@/Components/ShiftThermalReceipt';
 import Modal from '@/Components/Modal';
@@ -46,6 +46,10 @@ export default function ShiftsIndex() {
     const [printingShift, setPrintingShift] = useState<Shift | null>(null);
     const [showExpected, setShowExpected] = useState(false);
     const [showHandover, setShowHandover] = useState(false);
+    
+    // Refs for focusing
+    const startingCashRef = useRef<HTMLInputElement>(null);
+    const actualEndingCashRef = useRef<HTMLInputElement>(null);
 
     const loginForm = useForm({
         email: '',
@@ -116,6 +120,43 @@ export default function ShiftsIndex() {
         });
     };
 
+    // Keyboard Shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const isTyping = ['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName);
+
+            // Alt+P: To POS
+            if (e.altKey && e.key.toLowerCase() === 'p') {
+                e.preventDefault();
+                router.visit('/pos');
+            }
+            
+            // Alt+L: To Reports
+            if (e.altKey && e.key.toLowerCase() === 'l') {
+                e.preventDefault();
+                router.visit('/reports');
+            }
+
+            if (e.key === 'F2' && !activeShift) {
+                e.preventDefault();
+                startingCashRef.current?.focus();
+            }
+
+            if (e.key === 'F9' && activeShift) {
+                e.preventDefault();
+                actualEndingCashRef.current?.focus();
+            }
+
+            if (e.key === 'Escape' && showHandover) {
+                // Prevent closing handover modal via Esc to force login? 
+                // Or let it be. Usually better to stay.
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [activeShift, showHandover]);
+
     return (
         <AuthenticatedLayout>
             <Head title="Manajemen Shift - Operational" />
@@ -144,6 +185,7 @@ export default function ShiftsIndex() {
                                     <div className="relative">
                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-black text-indigo-300">Rp</span>
                                         <input
+                                            ref={startingCashRef}
                                             type="number"
                                             min="0"
                                             required
@@ -160,7 +202,7 @@ export default function ShiftsIndex() {
                                     disabled={startForm.processing}
                                     className="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold text-sm tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-3 uppercase"
                                 >
-                                    BUKA SESI KASIR <ArrowRight className="w-4 h-4" />
+                                    BUKA SESI KASIR [F2] <ArrowRight className="w-4 h-4" />
                                 </button>
                             </form>
                         </div>
@@ -215,7 +257,7 @@ export default function ShiftsIndex() {
                                         href="/pos"
                                         className="flex-1 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-bold text-xs uppercase tracking-widest hover:bg-gray-100 transition-all flex items-center justify-center gap-2"
                                     >
-                                        <Receipt className="w-4 h-4" /> Laman POS
+                                        <Receipt className="w-4 h-4" /> Laman POS [Alt+P]
                                     </Link>
                                     <Link
                                         href="/reports"
@@ -241,6 +283,7 @@ export default function ShiftsIndex() {
                                         <div className="relative">
                                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-black text-rose-300">Rp</span>
                                             <input
+                                                ref={actualEndingCashRef}
                                                 type="number"
                                                 min="0"
                                                 required
@@ -267,7 +310,7 @@ export default function ShiftsIndex() {
                                         disabled={endForm.processing}
                                         className="w-full py-4 rounded-2xl bg-gray-900 dark:bg-indigo-600 text-white font-bold text-xs tracking-widest hover:bg-black transition-all shadow-xl flex items-center justify-center gap-2 uppercase"
                                     >
-                                        <StopCircle className="w-5 h-5" /> Konfirmasi & Tutup Shift
+                                        <StopCircle className="w-5 h-5" /> Tutup Shift [F9]
                                     </button>
                                 </form>
                             </div>
