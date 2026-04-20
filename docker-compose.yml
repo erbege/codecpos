@@ -1,0 +1,82 @@
+services:
+  # PHP Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: codecpos-app
+    container_name: codecpos-app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    volumes:
+      - ./:/var/www
+      - ./storage:/var/www/storage
+    networks:
+      - codecpos-network
+
+  # Nginx Service
+  web:
+    image: nginx:alpine
+    container_name: codecpos-web
+    restart: unless-stopped
+    ports:
+      - "8088:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - codecpos-network
+    depends_on:
+      - app
+
+  # Database Service
+  db:
+    image: mariadb:10.11
+    container_name: codecpos-db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_DATABASE: ${DB_DATABASE}
+      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD}
+      MARIADB_USER: ${DB_USERNAME}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - codecpos-network
+
+  # Redis Service
+  redis:
+    image: redis:alpine
+    container_name: codecpos-redis
+    restart: unless-stopped
+    networks:
+      - codecpos-network
+
+  # phpMyAdmin Service
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: codecpos-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8089:80"
+    environment:
+      PMA_HOST: db
+      PMA_ARBITRARY: 1
+    networks:
+      - codecpos-network
+    depends_on:
+      - db
+
+networks:
+  codecpos-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
