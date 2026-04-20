@@ -22,14 +22,43 @@ class SaleController extends Controller
     ) {}
 
     /**
+     * Get the active outlet ID for the current session/user.
+     */
+    private function getActiveOutletId(): ?int
+    {
+        $user = Auth::user();
+        $isAdmin = $user->hasRole('admin') || $user->hasRole('super-admin') || $user->hasRole('owner');
+        
+        // For Admins/Owners, prioritize session if set.
+        if ($isAdmin) {
+            return session('active_pos_outlet_id') ?: $user->outlet_id;
+        }
+
+        return (int) $user->outlet_id;
+    }
+
+    /**
      * POS page
      */
     public function create()
     {
         $this->authorize('sales.create');
 
-        // Check if there is an active shift for the user
+        $user = Auth::user();
+        $isAdmin = $user->hasRole('admin') || $user->hasRole('super-admin') || $user->hasRole('owner');
+        $outletId = $this->getActiveOutletId();
+
+        // If Admin hasn't selected an outlet, they must select one
+        if ($isAdmin && !$outletId) {
+            $outlets = \App\Models\Outlet::where('is_active', true)->orderBy('name')->get();
+            return Inertia::render('POS/SelectOutlet', [
+                'outlets' => $outlets
+            ]);
+        }
+
+        // Check if there is an active shift for the user at this specific outlet
         $activeShift = Shift::where('user_id', Auth::id())
+                            ->where('outlet_id', $outletId)
                             ->where('status', 'open')
                             ->first();
 
@@ -37,8 +66,6 @@ class SaleController extends Controller
             return redirect()->route('shifts.index')
                 ->with('error', 'Anda harus membuka kasir (shift) terlebih dahulu sebelum melakukan transaksi.');
         }
-
-        $outletId = Auth::user()->outlet_id;
 
         $products = Product::whereHas('outletSettings', function($q) use ($outletId) {
             $q->where('outlet_id', $outletId)->where('is_active', true);
@@ -82,7 +109,29 @@ class SaleController extends Controller
             'customers' => $customers,
             'taxRate' => $taxEnabled ? $taxPercentage : 0,
             'taxPerItem' => $taxPerItem,
+            'currentOutletId' => $outletId,
+            'outlets' => $isAdmin ? \App\Models\Outlet::where('is_active', true)->orderBy('name')->get() : [],
+            'canSwitchOutlet' => $isAdmin,
         ]);
+    }
+
+    /**
+     * Switch active outlet (Admins only)
+     */
+    public function setOutlet(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'outlet_id' => 'required|exists:outlets,id'
+        ]);
+
+        $user = Auth::user();
+        if (!$user->hasRole('admin') && !$user->hasRole('super-admin') && !$user->hasRole('owner')) {
+            return back()->with('error', 'Anda tidak memiliki akses untuk mengubah outlet.');
+        }
+
+        session(['active_pos_outlet_id' => (int) $request->outlet_id]);
+
+        return redirect()->route('pos')->with('success', 'Berhasil berpindah ke outlet yang dipilih.');
     }
 
     /**
@@ -90,17 +139,20 @@ class SaleController extends Controller
      */
     public function store(StoreSaleRequest $request)
     {
+        $outletId = $this->getActiveOutletId();
+
         $activeShift = \App\Models\Shift::where('user_id', \Illuminate\Support\Facades\Auth::id())
+            ->where('outlet_id', $outletId)
             ->where('status', 'open')
             ->first();
 
         if (!$activeShift) {
-            return back()->withErrors(['checkout' => 'Anda harus membuka shift terlebih dahulu.']);
+            return back()->withErrors(['checkout' => 'Anda harus membuka shift terlebih dahulu untuk outlet ini.']);
         }
 
         try {
             $data = $request->validated();
-            $data['outlet_id'] = \Illuminate\Support\Facades\Auth::user()->outlet_id;
+            $data['outlet_id'] = $outletId;
             
             $sale = $this->saleService->createSale($data);
 

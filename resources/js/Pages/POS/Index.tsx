@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, usePage, useForm } from '@inertiajs/react';
-import { PageProps, Product, Category, Customer } from '@/types';
+import { PageProps, Product, Category, Customer, Outlet } from '@/types';
 import { useCartStore } from '@/stores/useCartStore';
 import { useAppStore } from '@/stores/useAppStore';
 import {
@@ -38,6 +38,9 @@ interface Props extends PageProps {
     customers: Customer[];
     taxRate: number;
     taxPerItem: boolean;
+    outlets: Outlet[];
+    currentOutletId: number | null;
+    canSwitchOutlet: boolean;
 }
 
 const formatCurrency = (value: number) => {
@@ -52,7 +55,7 @@ const formatNumberInput = (val: string) => {
 };
 
 export default function POS() {
-    const { auth, flash, products, categories, customers, taxRate, taxPerItem } = usePage<Props>().props;
+    const { auth, flash, products, categories, customers, taxRate, taxPerItem, outlets, currentOutletId, canSwitchOutlet } = usePage<Props>().props;
     const cart = useCartStore();
     const { posViewMode, setPosViewMode } = useAppStore();
     const [search, setSearch] = useState('');
@@ -433,17 +436,34 @@ export default function POS() {
                 {/* Left: Product Grid */}
                 <div className="flex-1 flex flex-col min-w-0">
                     <div className="space-y-3 mb-4">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                            <input
-                                ref={searchRef}
-                                type="text"
-                                placeholder="Cari produk atau scan barcode... (F2)"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                onKeyDown={handleSearchKeyDown}
-                                className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-200 text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                            />
+                        <div className="flex gap-3">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                                <input
+                                    ref={searchRef}
+                                    type="text"
+                                    placeholder="Cari produk atau scan barcode... (F2)"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    onKeyDown={handleSearchKeyDown}
+                                    className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-200 text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                            </div>
+                            
+                            {/* Outlet Selector for Admins/Owners */}
+                            {canSwitchOutlet && outlets.length > 0 && (
+                                <div className="w-56 flex-shrink-0">
+                                    <select
+                                        value={currentOutletId || ''}
+                                        onChange={(e) => router.post(route('pos.set-outlet'), { outlet_id: e.target.value })}
+                                        className="w-full pl-3 pr-8 py-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-400 text-xs font-bold focus:ring-1 focus:ring-indigo-500 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236366f1%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22M6%208l4%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.5rem_center] bg-no-repeat"
+                                    >
+                                        {outlets.map(o => (
+                                            <option key={o.id} value={o.id}>{o.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                         </div>
                         <div className="flex items-center justify-between gap-4">
                             <div className="relative flex-1 min-w-0 group">

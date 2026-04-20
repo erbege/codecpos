@@ -16,7 +16,8 @@ import {
     ChevronRight,
     Search,
     Download,
-    History
+    History,
+    ArrowLeftRight
 } from 'lucide-react';
 import { 
     AreaChart, 
@@ -113,6 +114,14 @@ export default function Index({ summary, chartData, filters, outlets, auth }: Pr
             href: route('reports.shifts'),
             color: 'text-rose-600',
             bgColor: 'bg-rose-50 dark:bg-rose-500/10'
+        },
+        {
+            title: 'Perbandingan Produk',
+            desc: 'Komparasi stok, harga, dan ketersediaan antar cabang.',
+            icon: ArrowLeftRight,
+            href: route('reports.comparison'),
+            color: 'text-violet-600',
+            bgColor: 'bg-violet-50 dark:bg-violet-500/10'
         }
     ];
 

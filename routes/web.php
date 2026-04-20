@@ -41,6 +41,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // POS
     Route::get('/pos', [SaleController::class, 'create'])->name('pos');
     Route::post('/pos/checkout', [SaleController::class, 'store'])->name('pos.checkout');
+    Route::post('/pos/set-outlet', [SaleController::class, 'setOutlet'])->name('pos.set-outlet');
 
     // Sales History
     Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
@@ -88,6 +89,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/sales', [ReportController::class, 'sales'])->name('reports.sales');
         Route::get('/inventory', [ReportController::class, 'inventory'])->name('reports.inventory');
         Route::get('/financial', [ReportController::class, 'financial'])->name('reports.financial');
+        Route::get('/comparison', [ReportController::class, 'comparison'])->name('reports.comparison');
         
         // Exports
         Route::get('/shifts', [ReportController::class, 'shifts'])->name('reports.shifts');

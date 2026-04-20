@@ -324,6 +324,111 @@ class ReportController extends Controller
         ]);
     }
 
+    /**
+     * Compare products between two outlets.
+     */
+    public function comparison(Request $request): Response
+    {
+        $this->authorize('reports.view');
+        
+        $outlets = Outlet::all();
+        $outletAId = $request->get('outlet_a_id');
+        $outletBId = $request->get('outlet_b_id');
+
+        $comparisonData = [
+            'only_in_a' => [],
+            'only_in_b' => [],
+            'mismatch' => [],
+        ];
+
+        if ($outletAId && $outletBId) {
+            // Get all products and variants
+            $products = Product::with(['variants', 'outletSettings'])->get();
+
+            foreach ($products as $product) {
+                // Check for single products or multi-variants
+                $itemsToCompare = [];
+                if ($product->has_variants) {
+                    foreach ($product->variants as $variant) {
+                        $itemsToCompare[] = [
+                            'id' => $product->id,
+                            'variant_id' => $variant->id,
+                            'name' => "{$product->name} - {$variant->name}",
+                            'sku' => $variant->sku,
+                        ];
+                    }
+                } else {
+                    $itemsToCompare[] = [
+                        'id' => $product->id,
+                        'variant_id' => null,
+                        'name' => $product->name,
+                        'sku' => $product->sku,
+                    ];
+                }
+
+                foreach ($itemsToCompare as $item) {
+                    $settingA = \App\Models\OutletProductSetting::where('outlet_id', $outletAId)
+                        ->where('product_id', $item['id'])
+                        ->where('product_variant_id', $item['variant_id'])
+                        ->first();
+
+                    $settingB = \App\Models\OutletProductSetting::where('outlet_id', $outletBId)
+                        ->where('product_id', $item['id'])
+                        ->where('product_variant_id', $item['variant_id'])
+                        ->first();
+
+                    $isActiveA = $settingA && $settingA->is_active;
+                    $isActiveB = $settingB && $settingB->is_active;
+
+                    if ($isActiveA && !$isActiveB) {
+                        $comparisonData['only_in_a'][] = [
+                            'sku' => $item['sku'],
+                            'name' => $item['name'],
+                            'stock' => $settingA->stock,
+                            'price' => (float)$settingA->price,
+                        ];
+                    } elseif (!$isActiveA && $isActiveB) {
+                        $comparisonData['only_in_b'][] = [
+                            'sku' => $item['sku'],
+                            'name' => $item['name'],
+                            'stock' => $settingB->stock,
+                            'price' => (float)$settingB->price,
+                        ];
+                    } elseif ($isActiveA && $isActiveB) {
+                        $diffPrice = (float)$settingA->price != (float)$settingB->price;
+                        $diffStock = $settingA->stock != $settingB->stock;
+
+                        if ($diffPrice || $diffStock) {
+                            $comparisonData['mismatch'][] = [
+                                'sku' => $item['sku'],
+                                'name' => $item['name'],
+                                'a' => [
+                                    'stock' => $settingA->stock,
+                                    'price' => (float)$settingA->price,
+                                ],
+                                'b' => [
+                                    'stock' => $settingB->stock,
+                                    'price' => (float)$settingB->price,
+                                ],
+                                'diff_price' => $diffPrice,
+                                'diff_stock' => $diffStock,
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
+        return Inertia::render('Reports/Comparison', [
+            'outlets' => $outlets,
+            'data' => $comparisonData,
+            'filters' => [
+                'outlet_a_id' => $outletAId,
+                'outlet_b_id' => $outletBId,
+            ]
+        ]);
+    }
+
     private function getFilters(Request $request)
     {
         return [

@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, usePage, Link, router } from '@inertiajs/react';
-import { PageProps } from '@/types';
+import { PageProps, Outlet } from '@/types';
 import { Calculator, PlayCircle, StopCircle, Receipt, AlertCircle, Clock, Wallet, History, ArrowRight, Printer, Eye, EyeOff, User } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { toast } from 'sonner';
@@ -29,6 +29,8 @@ interface Props extends PageProps {
     activeShift: Shift | null;
     historyShifts: Shift[];
     suggestedStartingCash: number;
+    currentOutlet: Outlet | null;
+    allOpenShifts: Shift[];
 }
 
 const formatCurrency = (value: number | string) => {
@@ -42,7 +44,7 @@ const formatDate = (dateStr: string) => {
 };
 
 export default function ShiftsIndex() {
-    const { activeShift, historyShifts, suggestedStartingCash, auth } = usePage<Props>().props;
+    const { activeShift, historyShifts, suggestedStartingCash, auth, currentOutlet, allOpenShifts } = usePage<Props>().props;
     const [printingShift, setPrintingShift] = useState<Shift | null>(null);
     const [showExpected, setShowExpected] = useState(false);
     const [showHandover, setShowHandover] = useState(false);
@@ -162,10 +164,28 @@ export default function ShiftsIndex() {
             <Head title="Manajemen Shift - Operational" />
 
             <div className="max-w-5xl mx-auto space-y-6">
-                <div className="py-2 border-b border-gray-100 dark:border-gray-800">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Sesi Shift Kasir</h1>
-                    <p className="text-sm font-semibold text-gray-400">Kelola saldo laci kasir dan sesi kerja operasional</p>
+                <div className="py-2 border-b border-gray-100 dark:border-gray-800 flex justify-between items-end">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Sesi Shift Kasir</h1>
+                        <p className="text-sm font-semibold text-gray-400">
+                            {currentOutlet ? `Mengelola Kasir untuk: ${currentOutlet.name}` : 'Kelola saldo laci kasir dan sesi kerja operasional'}
+                        </p>
+                    </div>
                 </div>
+
+                {/* Multiple Shifts Notification for Admins */}
+                {!auth.user.outlet_id && allOpenShifts.length > 1 && (
+                    <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-2xl p-4 flex items-start gap-4">
+                        <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                        <div>
+                            <h4 className="text-sm font-bold text-amber-800 dark:text-amber-400 uppercase tracking-tight">Perhatian: Anda memiliki beberapa shift terbuka</h4>
+                            <p className="text-xs text-amber-700 dark:text-amber-500 mt-1">
+                                Anda memiliki shift aktif di outlet: <strong>{allOpenShifts.map(s => s.outlet?.name).join(', ')}</strong>. 
+                                POS hanya akan memproses transaksi untuk outlet yang sedang aktif dipilih.
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {!activeShift ? (
                     <div className="rounded-3xl bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-500/20 p-8 shadow-xl shadow-indigo-500/5 relative overflow-hidden group">

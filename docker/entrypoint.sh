@@ -1,25 +1,32 @@
 #!/bin/sh
+# === docker/entrypoint.sh ===
 
-# Set working directory permissions
+# Fix Permissions
 chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-# Wait for DB to be ready (optional but recommended)
+# SINKRONISASI FILE KE VOLUME (PENTING AGAR NGINX BISA BACA)
+echo "Syncing files to volumes..."
+mkdir -p /var/www/public/build
+cp -ra /var/www/public/build_tmp/. /var/www/public/build/
+cp -ra /var/www/public_tmp/. /var/www/public/
+chown -R www-data:www-data /var/www/public
+
+# Tunggu DB
 echo "Waiting for database..."
-# sleep 5
+until nc -z -v -w30 $DB_HOST ${DB_PORT:-3306}; do
+  sleep 2
+done
 
-# Run migrations
-echo "Running migrations..."
+# Artisan commands
+php artisan package:discover --ansi
 php artisan migrate --force
+php artisan storage:link --force || true
 
-# Create storage link
-echo "Creating storage link..."
-php artisan storage:link --force
+if [ "$APP_ENV" = "production" ]; then
+    php artisan config:cache
+    php artisan route:cache
+    php artisan view:cache
+fi
 
-# Cache configuration and routes
-echo "Caching configuration..."
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-
-echo "Entrypoint finished, starting PHP-FPM..."
 exec php-fpm
+
