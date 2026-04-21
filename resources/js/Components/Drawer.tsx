@@ -15,10 +15,10 @@ export default function Drawer({ show, onClose, title, width = 'max-w-md', child
             <Dialog as="div" className="relative z-[150]" onClose={onClose}>
                 <TransitionChild
                     as={Fragment}
-                    enter="ease-in-out duration-500"
+                    enter="ease-out duration-200"
                     enterFrom="opacity-0"
                     enterTo="opacity-100"
-                    leave="ease-in-out duration-500"
+                    leave="ease-in duration-150"
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
@@ -30,10 +30,10 @@ export default function Drawer({ show, onClose, title, width = 'max-w-md', child
                         <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
                             <TransitionChild
                                 as={Fragment}
-                                enter="transform transition ease-in-out duration-500 sm:duration-700"
+                                enter="transform transition ease-out duration-200"
                                 enterFrom="translate-x-full"
                                 enterTo="translate-x-0"
-                                leave="transform transition ease-in-out duration-500 sm:duration-700"
+                                leave="transform transition ease-in duration-150"
                                 leaveFrom="translate-x-0"
                                 leaveTo="translate-x-full"
                             >

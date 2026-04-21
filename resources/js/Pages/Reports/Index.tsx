@@ -103,7 +103,7 @@ export default function Index({ summary, chartData, filters, outlets, auth }: Pr
             title: 'Laporan Operasional',
             desc: 'Rincian pajak, diskon, dan kinerja operasional.',
             icon: BarChart3,
-            href: route('reports.index'), // Placeholder
+            href: route('reports.operational'),
             color: 'text-blue-600',
             bgColor: 'bg-blue-50 dark:bg-blue-500/10'
         },

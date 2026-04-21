@@ -243,6 +243,62 @@ class ReportController extends Controller
     }
 
     /**
+     * Operational detailed report.
+     */
+    public function operational(Request $request): Response
+    {
+        $this->authorize('reports.view');
+        $filters = $this->getFilters($request);
+        $outletId = $filters['outlet_id'];
+        $dateFrom = $filters['date_from'];
+        $dateTo = $filters['date_to'];
+
+        // 1. Operational Summary
+        $summary = Sale::when($outletId, fn($q) => $q->where('outlet_id', $outletId))
+            ->whereBetween('created_at', [$dateFrom, $dateTo . ' 23:59:59'])
+            ->selectRaw('
+                COUNT(*) as total_transactions,
+                SUM(CASE WHEN status = "completed" THEN total ELSE 0 END) as net_sales,
+                SUM(tax) as total_tax,
+                SUM(discount) as total_discount,
+                SUM(CASE WHEN status = "void" THEN 1 ELSE 0 END) as void_count,
+                AVG(CASE WHEN status = "completed" THEN total ELSE NULL END) as avg_transaction_value
+            ')
+            ->first();
+
+        // 2. Sales by Status
+        $byStatus = Sale::when($outletId, fn($q) => $q->where('outlet_id', $outletId))
+            ->whereBetween('created_at', [$dateFrom, $dateTo . ' 23:59:59'])
+            ->select('status', DB::raw('COUNT(*) as count'), DB::raw('SUM(total) as amount'))
+            ->groupBy('status')
+            ->get();
+
+        // 3. Daily Operational Breakdown
+        $dailyData = Sale::when($outletId, fn($q) => $q->where('outlet_id', $outletId))
+            ->whereBetween('created_at', [$dateFrom, $dateTo . ' 23:59:59'])
+            ->selectRaw('
+                DATE(created_at) as date, 
+                COUNT(*) as transactions, 
+                SUM(tax) as tax, 
+                SUM(discount) as discount,
+                SUM(CASE WHEN status = "completed" THEN total ELSE 0 END) as sales
+            ')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        return Inertia::render('Reports/Operational', [
+            'data' => [
+                'summary' => $summary,
+                'byStatus' => $byStatus,
+                'daily' => $dailyData,
+            ],
+            'filters' => $filters,
+            'outlets' => Outlet::all()
+        ]);
+    }
+
+    /**
      * Export Sales Report to Excel.
      */
     public function exportSalesExcel(Request $request)
@@ -325,28 +381,137 @@ class ReportController extends Controller
     }
 
     /**
-     * Compare products between two outlets.
+     * Compare products across outlets.
      */
     public function comparison(Request $request): Response
     {
         $this->authorize('reports.view');
         
         $outlets = Outlet::all();
-        $outletAId = $request->get('outlet_a_id');
-        $outletBId = $request->get('outlet_b_id');
+        $filters = [
+            'view' => $request->get('view', 'side-by-side'),
+            'outlet_a_id' => $request->get('outlet_a_id'),
+            'outlet_b_id' => $request->get('outlet_b_id'),
+        ];
+
+        $comparisonData = $this->getComparisonData($filters, $outlets);
+
+        return Inertia::render('Reports/Comparison', [
+            'outlets' => $outlets,
+            'data' => $comparisonData,
+            'filters' => $filters
+        ]);
+    }
+
+    /**
+     * Export Comparison Report to Excel.
+     */
+    public function exportComparisonExcel(Request $request)
+    {
+        $this->authorize('reports.export');
+        $outlets = Outlet::all();
+        $filters = [
+            'view' => $request->get('view', 'side-by-side'),
+            'outlet_a_id' => $request->get('outlet_a_id'),
+            'outlet_b_id' => $request->get('outlet_b_id'),
+        ];
+
+        $comparisonData = $this->getComparisonData($filters, $outlets);
+        $outletA = $filters['outlet_a_id'] ? Outlet::find($filters['outlet_a_id']) : null;
+        $outletB = $filters['outlet_b_id'] ? Outlet::find($filters['outlet_b_id']) : null;
+
+        return Excel::download(new \App\Exports\ComparisonExport($comparisonData, $outlets, $filters, $outletA, $outletB), 'perbandingan_produk_' . now()->format('YmdHis') . '.xlsx');
+    }
+
+    /**
+     * Export Comparison Report to PDF.
+     */
+    public function exportComparisonPdf(Request $request)
+    {
+        $this->authorize('reports.export');
+        $outlets = Outlet::all();
+        $filters = [
+            'view' => $request->get('view', 'side-by-side'),
+            'outlet_a_id' => $request->get('outlet_a_id'),
+            'outlet_b_id' => $request->get('outlet_b_id'),
+        ];
+
+        $comparisonData = $this->getComparisonData($filters, $outlets);
+        $outletA = $filters['outlet_a_id'] ? Outlet::find($filters['outlet_a_id']) : null;
+        $outletB = $filters['outlet_b_id'] ? Outlet::find($filters['outlet_b_id']) : null;
+
+        $pdf = Pdf::loadView('reports.comparison_pdf', [
+            'data' => $comparisonData,
+            'outlets' => $outlets,
+            'filters' => $filters,
+            'outletA' => $outletA,
+            'outletB' => $outletB
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('perbandingan_produk_' . now()->format('YmdHis') . '.pdf');
+    }
+
+    private function getComparisonData($filters, $outlets)
+    {
+        $viewMode = $filters['view'];
+        $outletAId = $filters['outlet_a_id'];
+        $outletBId = $filters['outlet_b_id'];
 
         $comparisonData = [
             'only_in_a' => [],
             'only_in_b' => [],
             'mismatch' => [],
+            'matrix' => [],
         ];
 
+        // 1. Matrix View (All Outlets)
+        if ($viewMode === 'matrix') {
+            $products = Product::with(['variants', 'outletSettings'])->get();
+            foreach ($products as $product) {
+                $baseItems = [];
+                if ($product->has_variants) {
+                    foreach ($product->variants as $variant) {
+                        $baseItems[] = [
+                            'sku' => $variant->sku,
+                            'name' => "{$product->name} - {$variant->name}",
+                            'id' => $product->id,
+                            'variant_id' => $variant->id,
+                        ];
+                    }
+                } else {
+                    $baseItems[] = [
+                        'sku' => $product->sku,
+                        'name' => $product->name,
+                        'id' => $product->id,
+                        'variant_id' => null,
+                    ];
+                }
+
+                foreach ($baseItems as $item) {
+                    $itemOutlets = [];
+                    foreach ($outlets as $outlet) {
+                        $setting = $product->outletSettings
+                            ->where('outlet_id', $outlet->id)
+                            ->where('product_variant_id', $item['variant_id'])
+                            ->first();
+                        
+                        $itemOutlets[$outlet->id] = [
+                            'active' => $setting ? $setting->is_active : false,
+                            'stock' => $setting ? $setting->stock : 0,
+                            'price' => $setting ? (float)$setting->price : 0,
+                        ];
+                    }
+                    $item['outlet_data'] = $itemOutlets;
+                    $comparisonData['matrix'][] = $item;
+                }
+            }
+        } 
+        
+        // 2. Side-by-Side View (Targeted Comparison)
         if ($outletAId && $outletBId) {
-            // Get all products and variants
             $products = Product::with(['variants', 'outletSettings'])->get();
 
             foreach ($products as $product) {
-                // Check for single products or multi-variants
                 $itemsToCompare = [];
                 if ($product->has_variants) {
                     foreach ($product->variants as $variant) {
@@ -367,13 +532,13 @@ class ReportController extends Controller
                 }
 
                 foreach ($itemsToCompare as $item) {
-                    $settingA = \App\Models\OutletProductSetting::where('outlet_id', $outletAId)
-                        ->where('product_id', $item['id'])
+                    $settingA = $product->outletSettings
+                        ->where('outlet_id', $outletAId)
                         ->where('product_variant_id', $item['variant_id'])
                         ->first();
 
-                    $settingB = \App\Models\OutletProductSetting::where('outlet_id', $outletBId)
-                        ->where('product_id', $item['id'])
+                    $settingB = $product->outletSettings
+                        ->where('outlet_id', $outletBId)
                         ->where('product_variant_id', $item['variant_id'])
                         ->first();
 
@@ -419,14 +584,7 @@ class ReportController extends Controller
             }
         }
 
-        return Inertia::render('Reports/Comparison', [
-            'outlets' => $outlets,
-            'data' => $comparisonData,
-            'filters' => [
-                'outlet_a_id' => $outletAId,
-                'outlet_b_id' => $outletBId,
-            ]
-        ]);
+        return $comparisonData;
     }
 
     private function getFilters(Request $request)

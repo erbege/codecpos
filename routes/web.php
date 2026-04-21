@@ -89,7 +89,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/sales', [ReportController::class, 'sales'])->name('reports.sales');
         Route::get('/inventory', [ReportController::class, 'inventory'])->name('reports.inventory');
         Route::get('/financial', [ReportController::class, 'financial'])->name('reports.financial');
+        Route::get('/operational', [ReportController::class, 'operational'])->name('reports.operational');
         Route::get('/comparison', [ReportController::class, 'comparison'])->name('reports.comparison');
+        Route::get('/comparison/export-excel', [ReportController::class, 'exportComparisonExcel'])->name('reports.comparison.export.excel');
+        Route::get('/comparison/export-pdf', [ReportController::class, 'exportComparisonPdf'])->name('reports.comparison.export.pdf');
         
         // Exports
         Route::get('/shifts', [ReportController::class, 'shifts'])->name('reports.shifts');
