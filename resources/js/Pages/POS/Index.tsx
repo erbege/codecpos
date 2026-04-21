@@ -65,6 +65,7 @@ export default function POS() {
     const [paidAmount, setPaidAmount] = useState('');
     const [selectedCustomer, setSelectedCustomer] = useState<number | null>(null);
     const [showCustomerModal, setShowCustomerModal] = useState(false);
+    const [posMobileTab, setPosMobileTab] = useState<'products' | 'cart'>('products');
     
     // Quick Add Customer Form
     const customerForm = useForm({
@@ -432,9 +433,9 @@ export default function POS() {
         <AuthenticatedLayout>
             <Head title="POS - Kasir" />
 
-            <div className="flex gap-4 h-[calc(100vh-7rem)]">
+            <div className="flex flex-col lg:flex-row gap-4 h-[calc(100dvh-8.5rem)] lg:h-[calc(100vh-7rem)]">
                 {/* Left: Product Grid */}
-                <div className="flex-1 flex flex-col min-w-0">
+                <div className={`flex-1 min-w-0 ${posMobileTab === 'products' ? 'flex flex-col' : 'hidden lg:flex lg:flex-col'}`}>
                     <div className="space-y-3 mb-4">
                         <div className="flex gap-3">
                             <div className="relative flex-1">
@@ -528,7 +529,7 @@ export default function POS() {
 
                     <div className="flex-1 overflow-y-auto pr-1">
                         {posViewMode === 'grid' ? (
-                            <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-2.5">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-2.5">
                                 {filteredProducts.map((product) => {
                                     const inCart = cart.items.find((i) => i.product.id === product.id);
                                     return (
@@ -605,7 +606,7 @@ export default function POS() {
                 </div>
 
                 {/* Right: Cart */}
-                <div className="w-72 xl:w-80 flex-shrink-0 flex flex-col rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 overflow-hidden shadow-xl">
+                <div className={`w-full lg:w-72 xl:w-80 h-full flex-shrink-0 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 overflow-hidden shadow-xl ${posMobileTab === 'cart' ? 'flex flex-col' : 'hidden lg:flex lg:flex-col'}`}>
                     <div className="px-3 py-2.5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800">
                         <div className="flex items-center gap-2">
                             <ShoppingCart className="w-4 h-4 text-indigo-500" />
@@ -614,7 +615,7 @@ export default function POS() {
                         <button onClick={() => { if (confirm('Kosongkan keranjang?')) cart.clearCart() }} className="text-[10px] text-gray-400 hover:text-red-500 transition-colors font-semibold uppercase tracking-tight">Hapus [F5]</button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                    <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-2">
                         {cart.items.length > 0 ? (
                             cart.items.map((item, idx) => (
                                 <div 
@@ -734,6 +735,31 @@ export default function POS() {
                         </button>
                     </div>
                 </div>
+            </div>
+
+            {/* Mobile Bottom Navigation */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 bg-opacity-90 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 flex items-center h-16 z-40 px-3 gap-3">
+                <button
+                    onClick={() => setPosMobileTab('products')}
+                    className={`flex-1 flex flex-col items-center justify-center gap-1 h-12 rounded-xl transition-all
+                        ${posMobileTab === 'products' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                >
+                    <Package className="w-5 h-5" />
+                    <span className="text-[10px] font-bold uppercase tracking-tighter">Katalog</span>
+                </button>
+                <button
+                    onClick={() => setPosMobileTab('cart')}
+                    className={`flex-1 flex flex-col items-center justify-center gap-1 h-12 rounded-xl transition-all relative
+                        ${posMobileTab === 'cart' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                >
+                    <ShoppingCart className="w-5 h-5" />
+                    <span className="text-[10px] font-bold uppercase tracking-tighter">Keranjang</span>
+                    {cart.items.length > 0 && (
+                        <div className="absolute top-1 right-1/3 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] flex items-center justify-center font-black ring-2 ring-white dark:ring-gray-900">
+                            {cart.items.length}
+                        </div>
+                    )}
+                </button>
             </div>
 
             {/* Checkout Drawer instead of Modal */}

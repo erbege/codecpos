@@ -42,9 +42,16 @@ interface AppStore {
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
-    sidebarOpen: false,
-    toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
-    setSidebarOpen: (open: boolean) => set({ sidebarOpen: open }),
+    sidebarOpen: localStorage.getItem('sidebarOpen') === null ? true : localStorage.getItem('sidebarOpen') === 'true',
+    toggleSidebar: () => {
+        const next = !get().sidebarOpen;
+        set({ sidebarOpen: next });
+        localStorage.setItem('sidebarOpen', String(next));
+    },
+    setSidebarOpen: (open: boolean) => {
+        set({ sidebarOpen: open });
+        localStorage.setItem('sidebarOpen', String(open));
+    },
     
     posViewMode: (localStorage.getItem('posViewMode') as 'grid'|'table') || 'grid',
     setPosViewMode: (mode: 'grid' | 'table') => {
