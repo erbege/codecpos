@@ -149,7 +149,7 @@ export default function Portal() {
             <Head title="Portal" />
 
             {/* <div className="h-screen overflow-hidden px-3 py-3 text-slate-900 dark:bg-[#070b18] dark:text-slate-100 sm:px-4"> */}
-                <div className="h-screen relative mx-auto flex h-full w-full max-w-[1720px] overflow-hidden rounded-[34px] border border-indigo-300/30  shadow-[0_28px_90px_rgba(7,11,24,0.55)] dark:border-indigo-500/20 dark:bg-[#0f1631]">
+                <div className="min-h-screen lg:h-screen relative mx-auto flex h-full w-full max-w-[1720px] overflow-y-auto lg:overflow-hidden lg:rounded-[34px] border-b lg:border border-indigo-300/30 shadow-[0_28px_90px_rgba(7,11,24,0.55)] dark:border-indigo-500/20 dark:bg-[#0f1631]">
                     <div className="pointer-events-none absolute inset-0">
                         <div className="absolute -left-24 -top-16 h-72 w-72 rounded-full bg-indigo-400/25 blur-3xl dark:bg-indigo-500/20" />
                         <div className="absolute -right-10 top-0 h-64 w-64 rounded-full bg-blue-400/20 blur-3xl dark:bg-blue-500/15" />
@@ -157,8 +157,8 @@ export default function Portal() {
                     </div>
 
                     <div className="relative flex h-full w-full flex-col gap-3 p-3 sm:p-4 lg:p-5">
-                        <header className="grid flex-none grid-cols-1 gap-3 lg:grid-cols-[1.45fr_0.5fr_0.5fr_0.5fr]">
-                            <div className="rounded-[28px] border border-indigo-300/30 bg-gradient-to-br from-indigo-950 via-indigo-900 to-blue-900 px-5 py-4 text-white shadow-lg shadow-indigo-950/30 dark:border-indigo-500/30">
+                        <header className="grid flex-none grid-cols-2 gap-3 lg:grid-cols-[1.45fr_0.5fr_0.5fr_0.5fr]">
+                            <div className="col-span-2 lg:col-span-1 rounded-[28px] border border-indigo-300/30 bg-gradient-to-br from-indigo-950 via-indigo-900 to-blue-900 px-5 py-4 text-white shadow-lg shadow-indigo-950/30 dark:border-indigo-500/30">
                                 <div className="flex items-center justify-between gap-4">
                                     <div className="flex items-center gap-4">
                                         <div className="flex h-16 w-16 items-center justify-center rounded-[22px] bg-gradient-to-br from-indigo-300 to-blue-300 text-indigo-950 shadow-lg shadow-indigo-500/30">
@@ -168,7 +168,7 @@ export default function Portal() {
                                             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
                                                 BikeShop POS
                                             </p>
-                                            <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-[2rem]">
+                                            <h1 className="mt-1 text-lg font-black tracking-tight sm:text-2xl lg:text-[2rem] leading-tight">
                                                 CodecPOS
                                             </h1>
                                             <p className="mt-1 text-sm text-slate-300">
@@ -240,24 +240,24 @@ export default function Portal() {
                             </Link>
                         </header>
 
-                        <section className="grid flex-none grid-cols-1 gap-3 lg:grid-cols-[1.55fr_0.45fr]">
-                            <div className="rounded-[28px] border border-indigo-200/80 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-indigo-500/30 dark:bg-indigo-500/10">
+                        <section className="grid flex-none grid-cols-2 gap-3 lg:grid-cols-[1.55fr_0.45fr]">
+                            <div className="col-span-2 lg:col-span-1 rounded-[28px] border border-indigo-200/80 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-indigo-500/30 dark:bg-indigo-500/10">
                                 <p className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white dark:bg-indigo-500">
                                     <Sparkles className="h-3.5 w-3.5" />
                                     Main Deck
                                 </p>
-                                <h2 className="mt-3 text-2xl font-black leading-tight tracking-tight text-slate-900 dark:text-white sm:text-[2rem]">
+                                <h2 className="mt-3 text-lg font-black leading-tight tracking-tight text-slate-900 dark:text-white sm:text-2xl lg:text-[2rem]">
                                     {getGreeting()}
                                 </h2>
                                 <div className="mt-2 flex items-center gap-2 text-slate-500 dark:text-slate-400">
                                     <div className="h-px w-8 bg-indigo-500/30" />
-                                    <p className="text-xs italic font-medium">
+                                    <p className="text-[10px] sm:text-xs italic font-medium">
                                         "{quote.text}" — <span className="font-bold not-italic text-indigo-600 dark:text-indigo-400">{quote.author}</span>
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="col-span-2 lg:col-span-1 grid grid-cols-2 gap-3">
                                 <div className="rounded-[26px] border border-indigo-200/80 bg-indigo-50/85 p-4 shadow-sm dark:border-indigo-500/30 dark:bg-indigo-500/10">
                                     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
                                         User
@@ -277,8 +277,8 @@ export default function Portal() {
                             </div>
                         </section>
 
-                        <main className="min-h-0 flex-1">
-                            <div className="grid h-full grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+                        <main className="min-h-0 flex-1 pb-6 lg:pb-0">
+                            <div className="grid h-full grid-cols-2 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                                 {menus.map((menu, idx) => (
                                     <Link
                                         key={menu.name}
@@ -292,9 +292,9 @@ export default function Portal() {
                                         <div className="relative flex h-full flex-col">
                                             <div className="flex items-start justify-between gap-3">
                                                 <div
-                                                    className={`flex h-20 w-20 items-center justify-center rounded-[26px] bg-gradient-to-br ${menu.tone} ${menu.isPrimary ? 'text-indigo-600' : 'text-white'} shadow-xl shadow-black/10`}
+                                                    className={`flex h-12 w-12 lg:h-20 lg:w-20 items-center justify-center rounded-[18px] lg:rounded-[26px] bg-gradient-to-br ${menu.tone} ${menu.isPrimary ? 'text-indigo-600' : 'text-white'} shadow-xl shadow-black/10`}
                                                 >
-                                                    <menu.icon className="h-10 w-10" />
+                                                    <menu.icon className="h-6 w-6 lg:h-10 lg:w-10" />
                                                 </div>
                                                 <span
                                                     className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${menu.isPrimary ? 'bg-white text-indigo-700' : 'bg-white/80 dark:bg-slate-900/70 ' + menu.accent}`}
@@ -303,11 +303,11 @@ export default function Portal() {
                                                 </span>
                                             </div>
 
-                                            <div className="mt-4 flex-1">
-                                                <h3 className={`text-xl font-black tracking-tight ${menu.isPrimary ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
+                                            <div className="mt-3 lg:mt-4 flex-1">
+                                                <h3 className={`text-base lg:text-xl font-black tracking-tight ${menu.isPrimary ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
                                                     {menu.name}
                                                 </h3>
-                                                <p className={`mt-2 text-sm leading-6 ${menu.isPrimary ? 'text-indigo-50' : 'text-slate-600 dark:text-slate-300'}`}>
+                                                <p className={`mt-1 lg:mt-2 text-[10px] lg:text-sm leading-relaxed lg:leading-6 ${menu.isPrimary ? 'text-indigo-50' : 'text-slate-600 dark:text-slate-300'}`}>
                                                     {menu.desc}
                                                 </p>
                                             </div>
