@@ -9,7 +9,7 @@ import { useAppStore } from './stores/useAppStore';
 // Initialize theme right away to prevent flashing
 useAppStore.getState().initializeTheme();
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'CodecPOS';
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
