@@ -26,6 +26,7 @@ export default function OutletIndex() {
     const openCreate = () => {
         setEditingOutlet(null);
         form.reset();
+        form.clearErrors();
         setShowModal(true);
     };
 

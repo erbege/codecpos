@@ -66,6 +66,8 @@ class DashboardController extends Controller
             'recentSales' => $recentSales,
             'weeklySales' => $weeklySales,
         ]);
+    }
+
     public function portal(): Response
     {
         $quote = $this->getRandomQuote();

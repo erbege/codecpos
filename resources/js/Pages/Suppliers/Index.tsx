@@ -36,6 +36,7 @@ export default function SuppliersIndex() {
     const openCreate = () => {
         setEditingSupplier(null);
         form.reset();
+        form.clearErrors();
         setShowModal(true);
     };
 

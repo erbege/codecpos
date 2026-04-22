@@ -27,6 +27,7 @@ export default function CustomersIndex() {
     const openCreate = () => {
         setEditingCustomer(null);
         form.reset();
+        form.clearErrors();
         setShowModal(true);
     };
 

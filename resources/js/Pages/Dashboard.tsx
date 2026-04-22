@@ -80,7 +80,7 @@ export default function Dashboard() {
         },
     ];
 
-    const maxSale = Math.max(...(weeklySales.map((s) => Number(s.total)) || [1]), 1);
+    const maxSale = Math.max(...(weeklySales?.map((s) => Number(s.total)) || [0]), 1);
 
     return (
         <AuthenticatedLayout>

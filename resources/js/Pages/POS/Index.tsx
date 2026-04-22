@@ -81,6 +81,12 @@ export default function POS() {
     const [showSwitchUserModal, setShowSwitchUserModal] = useState(false);
     const enableShiftManagement = app_settings?.enable_shift_management ?? true;
 
+    const openCustomerModal = () => {
+        customerForm.reset();
+        customerForm.clearErrors();
+        setShowCustomerModal(true);
+    };
+
     const handleAddCustomer = (e: React.FormEvent) => {
         e.preventDefault();
         customerForm.post(route('customers.store'), {
@@ -212,7 +218,7 @@ export default function POS() {
             }
             if (e.key === 'F8') {
                 e.preventDefault();
-                setShowCustomerModal(true);
+                openCustomerModal();
             }
             if (e.key === 'F9' && cart.items.length > 0) {
                 e.preventDefault();
@@ -921,7 +927,7 @@ export default function POS() {
                                     </div>
                                     <button
                                         type="button"
-                                        onClick={() => setShowCustomerModal(true)}
+                                        onClick={openCustomerModal}
                                         className="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm active:scale-90 transition-transform"
                                     >
                                         <Plus className="w-4 h-4" />

@@ -20,6 +20,7 @@ export default function CategoriesIndex() {
     const openCreate = () => {
         setEditingCategory(null);
         form.reset();
+        form.clearErrors();
         setShowModal(true);
     };
 
