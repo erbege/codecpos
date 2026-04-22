@@ -20,9 +20,7 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::get('/portal', function () {
-    return Inertia::render('Portal');
-})->middleware(['auth', 'verified'])->name('portal');
+Route::get('/portal', [DashboardController::class, 'portal'])->middleware(['auth', 'verified'])->name('portal');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Auth Handover (Switch User)

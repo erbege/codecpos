@@ -73,7 +73,19 @@ class SaleService
 
             $discount = $data['discount'] ?? 0;
             $tax = $data['tax'] ?? 0;
-            $total = $subtotal - $discount + $tax;
+            
+            // Get tax setting to determine if price was already inclusive
+            $taxPerItem = filter_var(\App\Models\Setting::get('tax_per_item', 'false'), FILTER_VALIDATE_BOOLEAN);
+            
+            if ($taxPerItem) {
+                // If tax is per-item (Inclusive), subtotal already contains tax.
+                // Total is subtotal - (global) discount.
+                $total = $subtotal - $discount;
+            } else {
+                // If tax is exclusive, total is subtotal - discount + tax.
+                $total = ($subtotal + $tax) - $discount;
+            }
+            
             $paid = $data['paid'];
             $change = $paid - $total;
 

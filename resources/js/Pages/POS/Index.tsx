@@ -416,6 +416,8 @@ export default function POS() {
             customer_id: selectedCustomer,
             notes: notes,
         }, {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: (page) => {
                 const flashProps = page.props.flash as any;
                 
@@ -441,7 +443,7 @@ export default function POS() {
                     change: Number(change || 0),
                     payment_method: paymentMethod,
                     created_at: new Date().toISOString(),
-                    outlet: auth?.user?.outlet || null
+                    outlet: (auth as any)?.user?.outlet || null
                 });
 
                 cart.clearCart();

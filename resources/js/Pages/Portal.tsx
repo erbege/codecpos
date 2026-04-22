@@ -27,38 +27,23 @@ const FALLBACK_QUOTES = [
     { text: "Cara terbaik untuk memprediksi masa depan adalah dengan menciptakannya.", author: "Peter Drucker" },
 ];
 
-export default function Portal() {
+interface Quote {
+    text: string;
+    author: string;
+}
+
+interface Props extends PageProps {
+    quote: Quote;
+}
+
+export default function Portal({ quote: serverQuote }: Props) {
     const { auth } = usePage<PageProps>().props;
     
-    // Inisialisasi dengan kutipan lokal acak agar tidak kosong saat loading
-    const [quote, setQuote] = useState(() => 
-        FALLBACK_QUOTES[Math.floor(Math.random() * FALLBACK_QUOTES.length)]
-    );
+    // Inisialisasi dengan kutipan dari server atau fallback lokal jika tidak ada
+    const [quote, setQuote] = useState(serverQuote || FALLBACK_QUOTES[0]);
 
-    useEffect(() => {
-        const fetchQuote = async () => {
-            try {
-                // Menggunakan ZenQuotes API sebagai sumber online
-                const response = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent('https://zenquotes.io/api/random'));
-                if (!response.ok) throw new Error('Network response was not ok');
-                
-                const data = await response.json();
-                const quoteData = JSON.parse(data.contents);
-                
-                if (quoteData && quoteData.length > 0) {
-                    setQuote({
-                        text: quoteData[0].q,
-                        author: quoteData[0].a
-                    });
-                }
-            } catch (error) {
-                console.error("Gagal mengambil kutipan online, menggunakan fallback:", error);
-                // Fallback sudah terpasang di state awal
-            }
-        };
-
-        fetchQuote();
-    }, []);
+    // Tidak perlu lagi useEffect fetchQuote karena sudah ditangani di Backend (PHP)
+    // Hal ini mencegah error CORS di browser.
 
     const currentDate = new Intl.DateTimeFormat("id-ID", {
         day: "2-digit",

@@ -66,5 +66,44 @@ class DashboardController extends Controller
             'recentSales' => $recentSales,
             'weeklySales' => $weeklySales,
         ]);
+    public function portal(): Response
+    {
+        $quote = $this->getRandomQuote();
+
+        return Inertia::render('Portal', [
+            'quote' => $quote
+        ]);
+    }
+
+    private function getRandomQuote(): array
+    {
+        $fallbacks = [
+            ['text' => 'Kualitas lebih penting daripada kuantitas. Satu home run jauh lebih baik daripada dua double.', 'author' => 'Steve Jobs'],
+            ['text' => 'Bisnis yang hebat tidak dibangun oleh satu orang, mereka dibangun oleh tim.', 'author' => 'Steve Jobs'],
+            ['text' => 'Kepuasan pelanggan adalah aset paling berharga dalam bisnis Anda.', 'author' => 'Anonim'],
+            ['text' => 'Inovasi adalah hal yang membedakan antara pemimpin dan pengikut.', 'author' => 'Steve Jobs'],
+            ['text' => 'Jangan menunggu kesempatan, ciptakanlah.', 'author' => 'Anonim'],
+            ['text' => 'Fokuslah pada pelayanan, maka keuntungan akan mengikuti.', 'author' => 'Anonim'],
+            ['text' => 'Keberhasilan adalah hasil dari persiapan, kerja keras, dan belajar dari kegagalan.', 'author' => 'Colin Powell'],
+            ['text' => 'Cara terbaik untuk memprediksi masa depan adalah dengan menciptakannya.', 'author' => 'Peter Drucker'],
+        ];
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(3)->get('https://zenquotes.io/api/random');
+            
+            if ($response->successful()) {
+                $data = $response->json();
+                if (!empty($data) && isset($data[0]['q'])) {
+                    return [
+                        'text' => $data[0]['q'],
+                        'author' => $data[0]['a']
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            // Log error if needed, but fail silently for UX
+        }
+
+        return $fallbacks[array_rand($fallbacks)];
     }
 }
