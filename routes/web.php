@@ -74,7 +74,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // User Management & RBAC
     Route::resource('users', \App\Http\Controllers\UserController::class)->except(['show', 'create', 'edit']);
-    Route::get('/roles', [\App\Http\Controllers\RoleController::class, 'index'])->name('roles.index');
+    Route::resource('roles', \App\Http\Controllers\RoleController::class)->except(['show', 'create', 'edit']);
 
     // Shifts
     Route::get('/shifts', [\App\Http\Controllers\ShiftController::class, 'index'])->name('shifts.index');

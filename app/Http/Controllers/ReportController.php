@@ -171,21 +171,32 @@ class ReportController extends Controller
         $filters = $this->getFilters($request);
         $outletId = $filters['outlet_id'];
 
-        // Current Stock
+        // Current Stock with Pagination
         $currentStock = Product::with('category')
             ->whereHas('outletSettings', function($q) use ($outletId) {
                 if ($outletId) $q->where('outlet_id', $outletId);
+                $q->where('is_active', true);
             })
-            ->get()
-            ->map(function($p) {
+            ->select('products.*')
+            ->orderBy('name')
+            ->paginate(50)
+            ->through(function($p) use ($outletId) {
+                // Ensure we use the correct stock from outlet settings
+                // (This is already handled by our previous logic in ProductService or similar, 
+                // but for this specific report we want to be explicit)
+                $setting = \App\Models\OutletProductSetting::where('product_id', $p->id)
+                    ->when($outletId, fn($q) => $q->where('outlet_id', $outletId))
+                    ->where('product_variant_id', null)
+                    ->first();
+                
                 return [
                     'id' => $p->id,
                     'sku' => $p->sku,
                     'name' => $p->name,
                     'category' => $p->category->name ?? 'N/A',
-                    'stock' => $p->stock,
-                    'min_stock' => $p->min_stock,
-                    'value' => $p->stock * ($p->cost_price ?? 0)
+                    'stock' => $setting ? $setting->stock : 0,
+                    'min_stock' => $setting ? $setting->min_stock : $p->min_stock,
+                    'value' => ($setting ? $setting->stock : 0) * ($p->cost_price ?? 0)
                 ];
             });
 
@@ -509,7 +520,14 @@ class ReportController extends Controller
         
         // 2. Side-by-Side View (Targeted Comparison)
         if ($outletAId && $outletBId) {
-            $products = Product::with(['variants', 'outletSettings'])->get();
+            // Find all products that are active in at least one of the outlets
+            $products = Product::with(['variants', 'outletSettings' => function($q) use ($outletAId, $outletBId) {
+                $q->whereIn('outlet_id', [$outletAId, $outletBId]);
+            }])
+            ->whereHas('outletSettings', function($q) use ($outletAId, $outletBId) {
+                $q->whereIn('outlet_id', [$outletAId, $outletBId])->where('is_active', true);
+            })
+            ->get();
 
             foreach ($products as $product) {
                 $itemsToCompare = [];
@@ -549,30 +567,30 @@ class ReportController extends Controller
                         $comparisonData['only_in_a'][] = [
                             'sku' => $item['sku'],
                             'name' => $item['name'],
-                            'stock' => $settingA->stock,
+                            'stock' => (int)$settingA->stock,
                             'price' => (float)$settingA->price,
                         ];
                     } elseif (!$isActiveA && $isActiveB) {
                         $comparisonData['only_in_b'][] = [
                             'sku' => $item['sku'],
                             'name' => $item['name'],
-                            'stock' => $settingB->stock,
+                            'stock' => (int)$settingB->stock,
                             'price' => (float)$settingB->price,
                         ];
                     } elseif ($isActiveA && $isActiveB) {
                         $diffPrice = (float)$settingA->price != (float)$settingB->price;
-                        $diffStock = $settingA->stock != $settingB->stock;
+                        $diffStock = (int)$settingA->stock != (int)$settingB->stock;
 
                         if ($diffPrice || $diffStock) {
                             $comparisonData['mismatch'][] = [
                                 'sku' => $item['sku'],
                                 'name' => $item['name'],
                                 'a' => [
-                                    'stock' => $settingA->stock,
+                                    'stock' => (int)$settingA->stock,
                                     'price' => (float)$settingA->price,
                                 ],
                                 'b' => [
-                                    'stock' => $settingB->stock,
+                                    'stock' => (int)$settingB->stock,
                                     'price' => (float)$settingB->price,
                                 ],
                                 'diff_price' => $diffPrice,

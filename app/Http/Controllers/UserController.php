@@ -72,7 +72,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:users,email,'.$user->id,
             'password' => ['nullable', Password::defaults()],
-            'pin' => 'required|numeric|digits:6',
+            'pin' => 'nullable|numeric|digits:6',
             'outlet_id' => 'nullable|exists:outlets,id',
             'role' => 'required|exists:roles,name',
         ]);
@@ -89,9 +89,11 @@ class UserController extends Controller
             ]);
         }
 
-        $user->update([
-            'pin' => Hash::make($validated['pin']),
-        ]);
+        if (!empty($validated['pin'])) {
+            $user->update([
+                'pin' => Hash::make($validated['pin']),
+            ]);
+        }
 
         $user->syncRoles($validated['role']);
 
