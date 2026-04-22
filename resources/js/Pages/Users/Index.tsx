@@ -32,6 +32,7 @@ export default function UserIndex() {
         name: '',
         email: '',
         password: '',
+        pin: '',
         outlet_id: '',
         role: '',
     });
@@ -48,6 +49,7 @@ export default function UserIndex() {
             name: user.name,
             email: user.email,
             password: '',
+            pin: '',
             outlet_id: user.outlet_id?.toString() || '',
             role: (user as any).roles?.[0]?.name || '',
         });
@@ -196,13 +198,13 @@ export default function UserIndex() {
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Password {editingUser && '(Kosongkan jika tidak diubah)'}</label>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">PIN Login (6-Digit Angka) *</label>
                                 <div className="relative">
                                     <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                                    <input type="password" value={form.data.password} onChange={(e) => form.setData('password', e.target.value)} required={!editingUser}
-                                        className="w-full pl-9 pr-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 text-xs font-black focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                                    <input type="password" maxLength={6} value={form.data.pin} onChange={(e) => form.setData('pin', e.target.value)} required
+                                        className="w-full pl-9 pr-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 text-xs font-black focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Contoh: 123456" />
                                 </div>
-                                {form.errors.password && <p className="mt-1 text-[10px] text-red-500 font-bold uppercase">{form.errors.password}</p>}
+                                {form.errors.pin && <p className="mt-1 text-[10px] text-red-500 font-bold uppercase">{form.errors.pin}</p>}
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">

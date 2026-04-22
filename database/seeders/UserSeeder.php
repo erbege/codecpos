@@ -13,6 +13,7 @@ class UserSeeder extends Seeder
             'name' => 'Administrator',
             'email' => 'admin@codecpos.com',
             'password' => bcrypt('password'),
+            'pin' => bcrypt('123456'),
             'email_verified_at' => now(),
         ]);
         $admin->assignRole('admin');
@@ -21,6 +22,7 @@ class UserSeeder extends Seeder
             'name' => 'Kasir',
             'email' => 'kasir@codecpos.com',
             'password' => bcrypt('password'),
+            'pin' => bcrypt('123456'),
             'email_verified_at' => now(),
         ]);
         $kasir->assignRole('kasir');
@@ -29,6 +31,7 @@ class UserSeeder extends Seeder
             'name' => 'Owner',
             'email' => 'owner@codecpos.com',
             'password' => bcrypt('password'),
+            'pin' => bcrypt('123456'),
             'email_verified_at' => now(),
         ]);
         $owner->assignRole('owner');

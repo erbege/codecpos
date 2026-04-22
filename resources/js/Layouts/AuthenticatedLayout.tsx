@@ -31,7 +31,7 @@ import { Toaster, toast } from 'sonner';
 import GlobalDialog from '@/Components/GlobalDialog';
 
 export default function AuthenticatedLayout({ children }: PropsWithChildren) {
-    const { auth, flash } = usePage<PageProps>().props;
+    const { auth, flash, app_settings } = usePage<PageProps>().props;
     const { sidebarOpen, setSidebarOpen, theme, setTheme } = useAppStore();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const currentUrl = window.location.pathname;
@@ -66,10 +66,17 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren) {
             title: 'POS',
             items: [
                 { name: 'POS Kasir', href: '/pos', icon: ShoppingCart, permission: 'sales.create', color: 'text-indigo-500' },
-                { name: 'Shift Kasir', href: '/shifts', icon: Clock, permission: 'sales.create', color: 'text-emerald-500' },
+                { 
+                    name: 'Shift Kasir', 
+                    href: '/shifts', 
+                    icon: Clock, 
+                    permission: 'sales.create', 
+                    color: 'text-emerald-500',
+                    hidden: app_settings?.enable_shift_management === false
+                },
                 { name: 'Riwayat Sales', href: '/sales', icon: Receipt, color: 'text-blue-500' },
                 { name: 'Retur Barang', href: '/returns', icon: RotateCcw, color: 'text-orange-500' },
-            ].filter((item) => !item.permission || can(item.permission)),
+            ].filter((item: any) => (!item.permission || can(item.permission)) && !item.hidden),
         },
         {
             title: 'Inventory',

@@ -3,6 +3,7 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import { Save, Percent, Building, Phone, Mail, FileText, MapPin, MessageSquare, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import NumericInput from '@/Components/NumericInput';
 
 interface Props extends PageProps {
     settings: {
@@ -16,6 +17,7 @@ interface Props extends PageProps {
         shop_footer_notes: string;
         base_starting_cash: number;
         tax_per_item: boolean;
+        enable_shift_management: boolean;
     };
 }
 
@@ -33,6 +35,7 @@ export default function SettingsIndex() {
         shop_footer_notes: settings.shop_footer_notes,
         base_starting_cash: settings.base_starting_cash,
         tax_per_item: settings.tax_per_item,
+        enable_shift_management: settings.enable_shift_management,
     });
 
     const handleSubmit = (e: React.FormEvent | React.MouseEvent) => {
@@ -216,11 +219,9 @@ export default function SettingsIndex() {
                                     <div className="space-y-3 animate-slide-in">
                                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Besaran PPN (%)</label>
                                         <div className="relative">
-                                            <input
-                                                type="number"
-                                                step="0.01"
+                                            <NumericInput
                                                 value={form.data.tax_percentage}
-                                                onChange={(e) => form.setData('tax_percentage', parseFloat(e.target.value) || 0)}
+                                                onChange={(val) => form.setData('tax_percentage', parseFloat(val) || 0)}
                                                 className="w-full pl-6 pr-12 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xl font-black text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
                                             />
                                             <div className="absolute inset-y-0 right-0 flex items-center pr-6 pointer-events-none text-emerald-500 font-black text-lg">%</div>
@@ -265,15 +266,32 @@ export default function SettingsIndex() {
                                     <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Modal Awal Standar (Rp)</label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-gray-400 font-bold">Rp</div>
-                                        <input
-                                            type="number"
+                                        <NumericInput
                                             value={form.data.base_starting_cash}
-                                            onChange={(e) => form.setData('base_starting_cash', parseFloat(e.target.value) || 0)}
+                                            onChange={(val) => form.setData('base_starting_cash', parseFloat(val) || 0)}
                                             className="w-full pl-12 pr-6 py-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all"
                                         />
                                     </div>
                                     <p className="text-xs text-gray-500 font-medium italic leading-relaxed pt-1">Digunakan sebagai saran modal awal jika tidak ada saldo shift sebelumnya untuk dibawa (Carry-over).</p>
                                     {form.errors.base_starting_cash && <p className="text-[10px] text-red-500 font-bold uppercase">{form.errors.base_starting_cash}</p>}
+                                </div>
+
+                                <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
+                                    <div className="flex items-center justify-between p-4 rounded-2xl bg-indigo-50/30 dark:bg-indigo-500/5 border border-dashed border-indigo-200 dark:border-indigo-500/30">
+                                        <div>
+                                            <p className="text-sm font-bold text-indigo-900 dark:text-indigo-300">Wajibkan Manajemen Shift</p>
+                                            <p className="text-[11px] text-indigo-500 font-medium mt-1 leading-tight">Jika aktif, kasir wajib mencatat saldo kas laci setiap awal dan akhir tugas.</p>
+                                        </div>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                className="sr-only peer" 
+                                                checked={form.data.enable_shift_management ?? true}
+                                                onChange={(e) => form.setData('enable_shift_management', e.target.checked)}
+                                            />
+                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-500 shadow-sm shadow-indigo-500/20"></div>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>

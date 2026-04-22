@@ -5,6 +5,8 @@ export interface User {
     email_verified_at?: string;
     outlet_id?: number;
     outlet?: Outlet;
+    roles?: { id: number; name: string; guard_name: string }[];
+    permissions?: { id: number; name: string; guard_name: string }[];
 }
 
 export interface Outlet {
@@ -150,5 +152,14 @@ export type PageProps<
     flash: {
         success?: string;
         error?: string;
+    };
+    app_settings: {
+        shop_name?: string;
+        shop_address?: string;
+        shop_phone?: string;
+        shop_email?: string;
+        shop_npwp?: string;
+        shop_footer_notes?: string;
+        enable_shift_management?: boolean;
     };
 };

@@ -4,6 +4,7 @@ import { PageProps } from '@/types';
 import { Save, Plus, Trash2, ArrowLeft, Search, Package, ShoppingBag, Receipt, Calendar } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+import NumericInput from '@/Components/NumericInput';
 
 interface Supplier {
     id: number;
@@ -299,10 +300,9 @@ export default function PurchasesCreate() {
                                                 <div className="flex flex-wrap items-end gap-3 w-full sm:w-auto">
                                                     <div className="w-20">
                                                         <label className="text-[9px] font-bold text-gray-400 uppercase mb-1.5 block">QUANTITY</label>
-                                                        <input 
-                                                            type="number" min="1" 
+                                                        <NumericInput 
                                                             value={item.qty} 
-                                                            onChange={e => updateItemQty(item.unique_id, parseInt(e.target.value) || 1)}
+                                                            onChange={val => updateItemQty(item.unique_id, parseInt(val) || 1)}
                                                             className="w-full px-3 py-2 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 text-sm font-black text-center focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
                                                         />
                                                     </div>
@@ -310,11 +310,10 @@ export default function PurchasesCreate() {
                                                         <label className="text-[9px] font-bold text-gray-400 uppercase mb-1.5 block">HARGA BELI</label>
                                                         <div className="relative">
                                                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400">Rp</span>
-                                                            <input 
-                                                                type="number" min="0" 
+                                                            <NumericInput 
                                                                 value={item.unit_cost === 0 ? '' : item.unit_cost} 
                                                                 placeholder="0"
-                                                                onChange={e => updateItemCost(item.unique_id, parseInt(e.target.value) || 0)}
+                                                                onChange={val => updateItemCost(item.unique_id, parseInt(val) || 0)}
                                                                 className="w-full pl-8 pr-3 py-2 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 text-sm font-black focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
                                                             />
                                                         </div>

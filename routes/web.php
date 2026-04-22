@@ -10,6 +10,7 @@ use App\Http\Controllers\Inventory\StockAdjustmentController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -24,6 +25,9 @@ Route::get('/portal', function () {
 })->middleware(['auth', 'verified'])->name('portal');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Auth Handover (Switch User)
+    Route::post('/auth/handover', [AuthenticatedSessionController::class, 'handover'])->name('auth.handover');
+
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -76,6 +80,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/shifts', [\App\Http\Controllers\ShiftController::class, 'index'])->name('shifts.index');
     Route::post('/shifts/start', [\App\Http\Controllers\ShiftController::class, 'start'])->name('shifts.start');
     Route::post('/shifts/end', [\App\Http\Controllers\ShiftController::class, 'end'])->name('shifts.end');
+    Route::post('/shifts/force-end', [\App\Http\Controllers\ShiftController::class, 'forceEnd'])->name('shifts.force-end');
 
     // Sales Returns
     Route::get('/returns', [\App\Http\Controllers\SaleReturnController::class, 'index'])->name('returns.index');

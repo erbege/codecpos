@@ -43,6 +43,7 @@ class HandleInertiaRequests extends Middleware
                 'shop_email' => \App\Models\Setting::get('shop_email', '-'),
                 'shop_npwp' => \App\Models\Setting::get('shop_npwp', '-'),
                 'shop_footer_notes' => \App\Models\Setting::get('shop_footer_notes', 'Terima kasih telah berbelanja!'),
+                'enable_shift_management' => filter_var(\App\Models\Setting::get('enable_shift_management', 'true'), FILTER_VALIDATE_BOOLEAN),
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

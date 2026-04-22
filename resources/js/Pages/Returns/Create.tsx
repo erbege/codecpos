@@ -4,6 +4,7 @@ import { PageProps, Sale } from '@/types';
 import { ArrowLeft, Save, RotateCcw, AlertTriangle, Trash2, Receipt, Package, ShoppingCart } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import NumericInput from '@/Components/NumericInput';
 
 interface Props extends PageProps {
     sale: Sale & {
@@ -238,10 +239,9 @@ export default function ReturnsCreate() {
                                                     <div className="flex items-center gap-4">
                                                         <div className="flex-1">
                                                             <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1.5">JUMLAH RETUR</label>
-                                                            <input 
-                                                                type="number" 
+                                                            <NumericInput 
                                                                 value={item.qty}
-                                                                onChange={e => updateItem(item.sale_item_id, 'qty', e.target.value)}
+                                                                onChange={val => updateItem(item.sale_item_id, 'qty', val)}
                                                                 className="w-full px-3 py-2 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 text-sm font-black focus:ring-2 focus:ring-orange-500/20 outline-none transition-all"
                                                             />
                                                         </div>

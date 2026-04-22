@@ -14,6 +14,7 @@ import {
     TrendingDown,
     Minus
 } from 'lucide-react';
+import NumericInput from '@/Components/NumericInput';
 
 interface Product {
     id: number;
@@ -225,10 +226,9 @@ export default function StockAdjustment({ products }: Props) {
                                     <div className="space-y-4">
                                         <div>
                                             <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">Input Jumlah Stok Fisik *</label>
-                                            <input
-                                                type="number"
+                                            <NumericInput
                                                 value={data.new_stock}
-                                                onChange={(e) => setData('new_stock', e.target.value)}
+                                                onChange={(val) => setData('new_stock', val)}
                                                 className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-2 border-indigo-100 dark:border-indigo-500/10 focus:border-indigo-500 text-xl font-black transition-all outline-none"
                                                 placeholder="0"
                                                 required

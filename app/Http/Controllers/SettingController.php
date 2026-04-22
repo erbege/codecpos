@@ -28,6 +28,7 @@ class SettingController extends Controller
             'shop_footer_notes',
             'base_starting_cash',
             'tax_per_item',
+            'enable_shift_management',
         ]);
 
         return Inertia::render('Settings/Index', [
@@ -42,6 +43,7 @@ class SettingController extends Controller
                 'shop_footer_notes' => $settings['shop_footer_notes'] ?? 'Terima kasih telah berbelanja!',
                 'base_starting_cash' => (float)($settings['base_starting_cash'] ?? 0),
                 'tax_per_item' => filter_var($settings['tax_per_item'] ?? 'false', FILTER_VALIDATE_BOOLEAN),
+                'enable_shift_management' => filter_var($settings['enable_shift_management'] ?? 'true', FILTER_VALIDATE_BOOLEAN),
             ]
         ]);
     }
@@ -64,6 +66,7 @@ class SettingController extends Controller
             'shop_footer_notes' => 'nullable|string',
             'base_starting_cash' => 'nullable|numeric|min:0',
             'tax_per_item' => 'nullable|boolean',
+            'enable_shift_management' => 'nullable|boolean',
         ]);
 
         Setting::set('tax_enabled', !empty($validated['tax_enabled']) ? 'true' : 'false');
@@ -76,6 +79,7 @@ class SettingController extends Controller
         Setting::set('shop_footer_notes', $validated['shop_footer_notes'] ?? '');
         Setting::set('base_starting_cash', $validated['base_starting_cash'] ?? 0);
         Setting::set('tax_per_item', !empty($validated['tax_per_item']) ? 'true' : 'false');
+        Setting::set('enable_shift_management', !empty($validated['enable_shift_management']) ? 'true' : 'false');
 
         return back()->with('success', 'Pengaturan berhasil disimpan.');
     }

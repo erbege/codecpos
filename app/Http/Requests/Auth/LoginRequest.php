@@ -28,8 +28,10 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
+            'email' => ['required_without:user_id', 'nullable', 'string', 'email'],
+            'password' => ['required_without:pin', 'nullable', 'string'],
+            'user_id' => ['required_without:email', 'nullable', 'exists:users,id'],
+            'pin' => ['required_without:password', 'nullable', 'string', 'digits:6'],
         ];
     }
 
@@ -42,11 +44,23 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        $authenticated = false;
+
+        if ($this->has('email') && $this->filled('email')) {
+            $authenticated = Auth::attempt($this->only('email', 'password'), $this->boolean('remember'));
+        } elseif ($this->has('user_id') && $this->filled('pin')) {
+            $user = \App\Models\User::find($this->user_id);
+            if ($user && \Illuminate\Support\Facades\Hash::check($this->pin, $user->pin)) {
+                Auth::login($user, $this->boolean('remember'));
+                $authenticated = true;
+            }
+        }
+
+        if (!$authenticated) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'email' => $this->has('email') ? trans('auth.failed') : 'PIN yang Anda masukkan salah.',
             ]);
         }
 
@@ -81,6 +95,7 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        $identifier = $this->filled('email') ? $this->string('email') : $this->string('user_id');
+        return Str::transliterate(Str::lower($identifier).'|'.$this->ip());
     }
 }

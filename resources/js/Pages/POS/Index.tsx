@@ -31,6 +31,8 @@ import { toast } from 'sonner';
 import ThermalReceipt from '@/Components/ThermalReceipt';
 import Drawer from '@/Components/Drawer';
 import Modal from '@/Components/Modal';
+import NumericInput from '@/Components/NumericInput';
+import SwitchUserModal from '@/Components/SwitchUserModal';
 
 interface Props extends PageProps {
     products: Product[];
@@ -41,21 +43,17 @@ interface Props extends PageProps {
     outlets: Outlet[];
     currentOutletId: number | null;
     canSwitchOutlet: boolean;
+    users: any[];
 }
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
 };
 
-const formatNumberInput = (val: string) => {
-    if (!val) return '';
-    const num = val.replace(/\D/g, '');
-    if (num === '') return '';
-    return new Intl.NumberFormat('id-ID').format(Number(num));
-};
+
 
 export default function POS() {
-    const { auth, flash, products, categories, customers, taxRate, taxPerItem, outlets, currentOutletId, canSwitchOutlet } = usePage<Props>().props;
+    const { auth, flash, products, categories, customers, taxRate, taxPerItem, outlets, currentOutletId, canSwitchOutlet, users, app_settings } = usePage<Props>().props;
     const cart = useCartStore();
     const { posViewMode, setPosViewMode } = useAppStore();
     const [search, setSearch] = useState('');
@@ -74,6 +72,9 @@ export default function POS() {
         email: '',
         address: '',
     });
+
+    const [showSwitchUserModal, setShowSwitchUserModal] = useState(false);
+    const enableShiftManagement = app_settings?.enable_shift_management ?? true;
 
     const handleAddCustomer = (e: React.FormEvent) => {
         e.preventDefault();
@@ -465,6 +466,17 @@ export default function POS() {
                                     </select>
                                 </div>
                             )}
+
+                            {/* Ganti Shift Button (Only when shift management is disabled) */}
+                            {!enableShiftManagement && (
+                                <button
+                                    onClick={() => setShowSwitchUserModal(true)}
+                                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-500 text-white text-xs font-black uppercase tracking-wider hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 whitespace-nowrap"
+                                >
+                                    <Users className="w-4 h-4" />
+                                    Ganti Kasir
+                                </button>
+                            )}
                         </div>
                         <div className="flex items-center justify-between gap-4">
                             <div className="relative flex-1 min-w-0 group">
@@ -640,10 +652,9 @@ export default function POS() {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-1">
                                             <button onClick={() => cart.updateQuantity(item.product.id, item.qty - 1)} className="w-5 h-5 rounded bg-white dark:bg-gray-900 border dark:border-gray-800 flex items-center justify-center text-gray-500"><Minus className="w-2.5 h-2.5" /></button>
-                                            <input 
-                                                type="number" 
+                                            <NumericInput 
                                                 value={item.qty} 
-                                                onChange={(e) => cart.updateQuantity(item.product.id, parseInt(e.target.value) || 1)}
+                                                onChange={(val) => cart.updateQuantity(item.product.id, parseInt(val) || 1)}
                                                 className="w-8 text-center bg-transparent border-none text-[13px] font-semibold focus:ring-0 p-0" 
                                             />
                                             <button onClick={() => cart.updateQuantity(item.product.id, item.qty + 1)} className="w-5 h-5 rounded bg-white dark:bg-gray-900 border dark:border-gray-800 flex items-center justify-center text-gray-500"><Plus className="w-2.5 h-2.5" /></button>
@@ -673,10 +684,9 @@ export default function POS() {
                                                         <Percent className="w-2.5 h-2.5" />
                                                     </button>
                                                 </div>
-                                                <input 
-                                                    type="number"
+                                                <NumericInput 
                                                     value={discountValue}
-                                                    onChange={(e) => setDiscountValue(e.target.value)}
+                                                    onChange={(val) => setDiscountValue(val)}
                                                     onKeyDown={(e) => e.key === 'Enter' && handleApplyItemDiscount(item.product.id)}
                                                     autoFocus
                                                     placeholder="0"
@@ -842,13 +852,9 @@ export default function POS() {
                             <label className="block text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2.5">Jumlah Bayar</label>
                             <div className="relative mb-3">
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-indigo-300 leading-none">Rp</span>
-                                <input 
-                                    type="text" 
-                                    value={formatNumberInput(paidAmount)}
-                                    onChange={(e) => {
-                                        const raw = e.target.value.replace(/\D/g, '');
-                                        setPaidAmount(raw);
-                                    }}
+                                <NumericInput 
+                                    value={paidAmount}
+                                    onChange={(val) => setPaidAmount(val)}
                                     autoFocus
                                     placeholder="0"
                                     className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white dark:bg-slate-900 border-2 border-indigo-200 dark:border-indigo-500/30 focus:border-indigo-500 transition-all text-2xl font-bold text-slate-900 dark:text-white focus:ring-8 focus:ring-indigo-500/10 placeholder:text-slate-300 leading-none shadow-inner"
@@ -912,10 +918,9 @@ export default function POS() {
                                             <Percent className="w-3 h-3" />
                                         </button>
                                     </div>
-                                    <input 
-                                        type="number" 
+                                    <NumericInput 
                                         value={globalDiscount}
-                                        onChange={(e) => setGlobalDiscount(e.target.value)}
+                                        onChange={(val) => setGlobalDiscount(val)}
                                         placeholder="0"
                                         className="w-full px-2 py-0 h-8 rounded-lg bg-gray-50 dark:bg-slate-800 border-none focus:ring-2 focus:ring-indigo-500 text-[11px] font-black text-slate-700 dark:text-slate-300 placeholder:text-slate-300"
                                     />
@@ -1058,6 +1063,12 @@ export default function POS() {
                     </div>
                 </form>
             </Modal>
+
+            <SwitchUserModal 
+                show={showSwitchUserModal}
+                onClose={() => setShowSwitchUserModal(false)}
+                users={users}
+            />
         </AuthenticatedLayout>
     );
 }

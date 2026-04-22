@@ -84,6 +84,26 @@
     }
 }
 
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+    20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+@keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1.25); }
+}
+
+.animate-shake {
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+.animate-pop {
+    animation: pop 0.2s ease-out both;
+}
+
 .animate-slide-in {
     animation: slide-in 0.3s ease-out;
 }
@@ -95,3 +115,4 @@
 .animate-scale-in {
     animation: scale-in 0.2s ease-out;
 }
+

@@ -56,13 +56,15 @@ class SaleController extends Controller
             ]);
         }
 
+        $enableShiftManagement = filter_var(\App\Models\Setting::get('enable_shift_management', 'true'), FILTER_VALIDATE_BOOLEAN);
+
         // Check if there is an active shift for the user at this specific outlet
         $activeShift = Shift::where('user_id', Auth::id())
                             ->where('outlet_id', $outletId)
                             ->where('status', 'open')
                             ->first();
 
-        if (!$activeShift) {
+        if ($enableShiftManagement && !$activeShift) {
             return redirect()->route('shifts.index')
                 ->with('error', 'Anda harus membuka kasir (shift) terlebih dahulu sebelum melakukan transaksi.');
         }
@@ -112,6 +114,7 @@ class SaleController extends Controller
             'currentOutletId' => $outletId,
             'outlets' => $isAdmin ? \App\Models\Outlet::where('is_active', true)->orderBy('name')->get() : [],
             'canSwitchOutlet' => $isAdmin,
+            'users' => \App\Models\User::select('id', 'name', 'email')->orderBy('name')->get(),
         ]);
     }
 
@@ -141,12 +144,14 @@ class SaleController extends Controller
     {
         $outletId = $this->getActiveOutletId();
 
+        $enableShiftManagement = filter_var(\App\Models\Setting::get('enable_shift_management', 'true'), FILTER_VALIDATE_BOOLEAN);
+
         $activeShift = \App\Models\Shift::where('user_id', \Illuminate\Support\Facades\Auth::id())
             ->where('outlet_id', $outletId)
             ->where('status', 'open')
             ->first();
 
-        if (!$activeShift) {
+        if ($enableShiftManagement && !$activeShift) {
             return back()->withErrors(['checkout' => 'Anda harus membuka shift terlebih dahulu untuk outlet ini.']);
         }
 

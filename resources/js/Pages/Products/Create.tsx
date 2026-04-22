@@ -4,6 +4,7 @@ import { PageProps, Category } from '@/types';
 import { ArrowLeft, Save, Plus, Trash2, Camera, X, Tag, DollarSign, Package, RefreshCw, Copy } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
+import NumericInput from '@/Components/NumericInput';
 
 interface Props extends PageProps {
     categories: Category[];
@@ -300,14 +301,14 @@ export default function ProductCreate() {
                             {/* Harga Beli */}
                             <div className="col-span-3 md:col-span-1">
                                 <label className={labelClass}>H. Beli *</label>
-                                <input type="number" value={data.cost_price} onChange={(e) => handleCostChange(e.target.value)} className={inputClass} placeholder="0" />
+                                <NumericInput value={data.cost_price} onChange={val => handleCostChange(val)} className={inputClass} placeholder="0" />
                                 {errors.cost_price && <p className="text-[10px] text-red-500 mt-0.5">{errors.cost_price}</p>}
                             </div>
 
                             {/* Margin */}
                             <div className="col-span-3 md:col-span-1">
                                 <label className={labelClass}>Margin *</label>
-                                <input type="number" value={data.margin} onChange={(e) => handleMarginChange(e.target.value)} className={inputClass} placeholder="0" />
+                                <NumericInput value={data.margin} onChange={val => handleMarginChange(val)} className={inputClass} placeholder="0" />
                                 {errors.margin && <p className="text-[10px] text-red-500 mt-0.5">{errors.margin}</p>}
                             </div>
 
@@ -316,10 +317,9 @@ export default function ProductCreate() {
                                 <label className={labelClass}>
                                     H. Jual {taxSettings.tax_per_item ? `(inc. ppn)` : ''} *
                                 </label>
-                                <input
-                                    type="number"
+                                <NumericInput
                                     value={data.price}
-                                    onChange={(e) => handlePriceChange(e.target.value)}
+                                    onChange={val => handlePriceChange(val)}
                                     className="w-full px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 text-sm font-black focus:ring-2 focus:ring-emerald-500/30 outline-none transition-all"
                                     placeholder="0"
                                 />
@@ -336,14 +336,14 @@ export default function ProductCreate() {
                             {!data.has_variants && (
                                 <div className="col-span-3 md:col-span-1">
                                     <label className={labelClass}>Stok Awal</label>
-                                    <input type="number" value={data.stock} onChange={(e) => setData('stock', e.target.value)} className={inputClass} />
+                                    <NumericInput value={data.stock} onChange={val => setData('stock', val)} className={inputClass} />
                                 </div>
                             )}
 
                             {/* Min Stok */}
                             <div className="col-span-3 md:col-span-1">
                                 <label className={labelClass}>Stok Min.</label>
-                                <input type="number" value={data.min_stock} onChange={(e) => setData('min_stock', e.target.value)} className={inputClass} />
+                                <NumericInput value={data.min_stock} onChange={val => setData('min_stock', val)} className={inputClass} />
                             </div>
                         </div>
                     </div>
@@ -401,10 +401,10 @@ export default function ProductCreate() {
                                                 </div>
                                             </div>
                                             <div className="col-span-2">
-                                                <input type="number" value={variant.price} onChange={(e) => updateVariant(index, 'price', e.target.value)} className={`${inputClass} !py-1.5 text-xs placeholder:text-gray-300 dark:placeholder:text-gray-600`} placeholder={`Rp ${new Intl.NumberFormat('id-ID').format(Number(data.price) || 0)}`} />
+                                                <NumericInput value={variant.price} onChange={val => updateVariant(index, 'price', val)} className={`${inputClass} !py-1.5 text-xs placeholder:text-gray-300 dark:placeholder:text-gray-600`} placeholder={`Rp ${new Intl.NumberFormat('id-ID').format(Number(data.price) || 0)}`} />
                                             </div>
                                             <div className="col-span-2">
-                                                <input type="number" value={variant.stock} onChange={(e) => updateVariant(index, 'stock', e.target.value)} className={`${inputClass} !py-1.5 text-xs`} placeholder="Stok" />
+                                                <NumericInput value={variant.stock} onChange={val => updateVariant(index, 'stock', val)} className={`${inputClass} !py-1.5 text-xs`} placeholder="Stok" />
                                             </div>
                                             <div className="col-span-1 flex items-center justify-center gap-1">
                                                 <button type="button" onClick={() => duplicateVariant(index)} className="p-1 text-gray-400 hover:text-indigo-500 transition-colors" title="Duplikat baris ini">
