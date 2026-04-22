@@ -29,6 +29,7 @@ class StoreProductRequest extends FormRequest
             'variants' => ['array', 'nullable'],
             'variants.*.name' => ['required_with:variants', 'string', 'max:255'],
             'variants.*.sku' => ['required_with:variants', 'string', 'max:50', 'distinct'],
+            'variants.*.barcode' => ['nullable', 'string', 'max:255'],
             'variants.*.stock' => ['required_with:variants', 'integer', 'min:0'],
             'variants.*.price' => ['nullable', 'numeric', 'min:0'],
             'variants.*.image' => ['nullable', 'image', 'max:2048'],

@@ -65,6 +65,11 @@ export default function POS() {
     const [showCustomerModal, setShowCustomerModal] = useState(false);
     const [posMobileTab, setPosMobileTab] = useState<'products' | 'cart'>('products');
     
+    // Smart Scan State
+    const [ambiguousProducts, setAmbiguousProducts] = useState<any[]>([]);
+    const [showVariantModal, setShowVariantModal] = useState(false);
+
+    
     // Quick Add Customer Form
     const customerForm = useForm({
         name: '',
@@ -296,6 +301,7 @@ export default function POS() {
                         variant_id: v.id,
                         name: `${p.name} - ${v.name}`,
                         sku: v.sku,
+                        barcode: v.barcode || p.barcode,
                         price: v.price || p.price,
                         stock: v.stock,
                         image: v.image || p.image,
@@ -322,18 +328,35 @@ export default function POS() {
         return matchSearch && matchCategory;
     });
 
-    // Auto-add product on exact barcode match (for scanners)
+    // Smart Scan / Auto-add logic
     useEffect(() => {
         if (!search || search.length < 3) return;
 
-        const exactMatch = flattenedProducts.find(
+        // Check for exact barcode match
+        const matches = flattenedProducts.filter(
             (p) => p.barcode && p.barcode === search
         );
 
-        if (exactMatch && exactMatch.stock > 0) {
-            cart.addItem(exactMatch);
+        if (matches.length === 1) {
+            const product = matches[0];
+            if (product.stock > 0) {
+                cart.addItem(product);
+                toast.success(`${product.name} ditambahkan`, {
+                    description: `SKU: ${product.sku}`,
+                    duration: 2000,
+                });
+                setSearch('');
+            } else {
+                toast.error(`Stok ${product.name} habis`, {
+                    description: 'Silakan cek ketersediaan barang.',
+                });
+                setSearch('');
+            }
+        } else if (matches.length > 1) {
+            // Ambiguous match - show selection modal
+            setAmbiguousProducts(matches);
+            setShowVariantModal(true);
             setSearch('');
-            // Toast feedback міг add feedback here
         }
     }, [search, flattenedProducts]);
 
@@ -341,9 +364,17 @@ export default function POS() {
         if (e.key === 'Enter') {
             e.preventDefault();
             // If there's only one product in the filtered list, add it
-            if (filteredProducts.length === 1 && filteredProducts[0].stock > 0) {
-                cart.addItem(filteredProducts[0]);
-                setSearch('');
+            if (filteredProducts.length === 1) {
+                if (filteredProducts[0].stock > 0) {
+                    cart.addItem(filteredProducts[0]);
+                    setSearch('');
+                } else {
+                    toast.error('Stok produk habis');
+                }
+            } else if (filteredProducts.length === 0) {
+                toast.error('Produk tidak ditemukan', {
+                    description: `Barcode/Pencarian: ${search}`,
+                });
             }
         }
     };
@@ -989,6 +1020,72 @@ export default function POS() {
                     </div>
                 </div>
             )}
+            {/* Variant Selection Modal for Ambiguous Scans */}
+            <Modal show={showVariantModal} onClose={() => setShowVariantModal(false)} maxWidth="lg">
+                <div className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Pilih Varian Produk</h2>
+                            <p className="text-xs text-gray-500 font-medium mt-1 uppercase tracking-wider">Ditemukan beberapa produk dengan barcode yang sama</p>
+                        </div>
+                        <button type="button" onClick={() => setShowVariantModal(false)} className="text-gray-400 hover:text-gray-500">
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-2 pb-2">
+                        {ambiguousProducts.map((product) => (
+                            <button
+                                key={product.id}
+                                onClick={() => {
+                                    if (product.stock > 0) {
+                                        cart.addItem(product);
+                                        toast.success(`${product.name} ditambahkan`);
+                                        setShowVariantModal(false);
+                                    } else {
+                                        toast.error('Stok varian ini habis');
+                                    }
+                                }}
+                                className={`flex items-start gap-3 p-4 rounded-2xl border text-left transition-all hover:border-indigo-500 hover:ring-2 hover:ring-indigo-500/20 group
+                                    ${product.stock <= 0 ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md'}`}
+                            >
+                                <div className="w-16 h-16 rounded-xl bg-gray-100 dark:bg-gray-800 flex-shrink-0 overflow-hidden flex items-center justify-center border border-gray-200 dark:border-gray-700">
+                                    {product.image ? (
+                                        <img src={`/storage/${product.image}`} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <Package className="w-8 h-8 text-gray-300" />
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0 py-1">
+                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate uppercase tracking-tight leading-none mb-2">{product.name}</h4>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 px-1.5 py-0.5 rounded uppercase tracking-widest">{formatCurrency(Number(product.price))}</span>
+                                            <span className="text-[10px] font-black text-gray-400 uppercase">SKU: {product.sku}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between pt-1">
+                                            <span className={`text-[10px] font-bold uppercase ${product.stock < 10 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                                STOK: {product.stock}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="mt-8 flex justify-end pt-5 border-t border-gray-100 dark:border-gray-800">
+                        <button
+                            type="button"
+                            onClick={() => setShowVariantModal(false)}
+                            className="px-8 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-bold text-xs hover:bg-gray-200 dark:hover:bg-gray-700 transition-all uppercase tracking-widest"
+                        >
+                            Batal
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
             {/* Add Customer Modal */}
             <Modal show={showCustomerModal} onClose={() => setShowCustomerModal(false)} maxWidth="md">
                 <form onSubmit={handleAddCustomer} className="p-6">

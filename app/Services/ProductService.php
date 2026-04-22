@@ -29,6 +29,7 @@ class ProductService
                       ->orWhere('barcode', 'like', "%{$search}%")
                       ->orWhereHas('variants', function (Builder $vq) use ($search) {
                           $vq->where('sku', 'like', "%{$search}%")
+                             ->orWhere('barcode', 'like', "%{$search}%")
                              ->orWhere('name', 'like', "%{$search}%");
                       });
                 });
@@ -118,6 +119,7 @@ class ProductService
                     $variant = $product->variants()->create([
                         'name' => $variantData['name'],
                         'sku' => $variantData['sku'],
+                        'barcode' => $variantData['barcode'] ?? null,
                         'stock' => 0, // Master stock no longer used
                         'price' => $variantData['price'] ?? null,
                         'image' => $variantImage,
@@ -217,6 +219,7 @@ class ProductService
                             $variant->update([
                                 'name' => $variantData['name'],
                                 'sku' => $variantData['sku'],
+                                'barcode' => $variantData['barcode'] ?? $variant->barcode,
                                 'price' => $variantData['price'] ?? $variant->price, // Update base price
                             ]);
 
@@ -233,6 +236,7 @@ class ProductService
                             $variant = $product->variants()->create([
                                 'name' => $variantData['name'],
                                 'sku' => $variantData['sku'],
+                                'barcode' => $variantData['barcode'] ?? null,
                                 'stock' => 0,
                                 'price' => $variantData['price'] ?? null,
                             ]);
@@ -288,7 +292,10 @@ class ProductService
                 $query->where(function (Builder $q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                       ->orWhere('sku', 'like', "%{$search}%")
-                      ->orWhere('barcode', $search);
+                      ->orWhere('barcode', $search)
+                      ->orWhereHas('variants', function($vq) use ($search) {
+                          $vq->where('barcode', $search)->orWhere('sku', $search);
+                      });
                 });
             })
             ->orderBy('name')
