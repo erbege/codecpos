@@ -16,7 +16,7 @@ class StockAdjustmentController extends Controller
 {
     public function index(): Response
     {
-        $this->authorize('products.read');
+        $this->authorize('stock.read');
 
         $outletId = Auth::user()->outlet_id;
 
@@ -53,7 +53,7 @@ class StockAdjustmentController extends Controller
 
     public function store(Request $request)
     {
-        $this->authorize('products.update');
+        $this->authorize('stock.adjust');
 
         $request->validate([
             'product_id' => 'required|exists:products,id',

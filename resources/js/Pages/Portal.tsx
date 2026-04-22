@@ -38,6 +38,9 @@ interface Props extends PageProps {
 
 export default function Portal({ quote: serverQuote }: Props) {
     const { auth } = usePage<PageProps>().props;
+
+    // Permission helper — mirrors sidebar logic
+    const can = (permission: string) => auth.permissions?.includes(permission);
     
     // Inisialisasi dengan kutipan dari server atau fallback lokal jika tidak ada
     const [quote, setQuote] = useState(serverQuote || FALLBACK_QUOTES[0]);
@@ -78,6 +81,7 @@ export default function Portal({ quote: serverQuote }: Props) {
             tone: "from-white to-indigo-100",
             iconBrandColor: "text-indigo-600",
             surface: "border-indigo-600 bg-indigo-600 shadow-indigo-600/20 dark:border-indigo-500 dark:bg-indigo-600",
+            permission: 'sales.create',
         },
         {
             name: "Inventory",
@@ -89,6 +93,7 @@ export default function Portal({ quote: serverQuote }: Props) {
             tone: "from-blue-500 to-indigo-500",
             surface:
                 "border-blue-200/80 bg-blue-50/85 dark:border-blue-500/30 dark:bg-blue-500/10",
+            permission: 'products.read',
         },
         {
             name: "Master Data",
@@ -100,6 +105,7 @@ export default function Portal({ quote: serverQuote }: Props) {
             tone: "from-violet-500 to-indigo-500",
             surface:
                 "border-violet-200/80 bg-violet-50/85 dark:border-violet-500/30 dark:bg-violet-500/10",
+            permission: 'customers.read',
         },
         {
             name: "Reports",
@@ -111,6 +117,7 @@ export default function Portal({ quote: serverQuote }: Props) {
             tone: "from-indigo-500 to-violet-500",
             surface:
                 "border-indigo-200/80 bg-indigo-50/85 dark:border-indigo-500/30 dark:bg-indigo-500/10",
+            permission: 'reports.view',
         },
         {
             name: "Settings",
@@ -122,8 +129,9 @@ export default function Portal({ quote: serverQuote }: Props) {
             tone: "from-indigo-600 to-violet-500",
             surface:
                 "border-indigo-200/80 bg-indigo-50/85 dark:border-indigo-500/30 dark:bg-indigo-500/10",
+            permission: 'settings.manage',
         },
-    ];
+    ].filter(menu => !menu.permission || can(menu.permission));
 
     return (
         <GuestLayout

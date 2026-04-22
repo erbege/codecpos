@@ -14,7 +14,7 @@ class SupplierController extends Controller
      */
     public function index(Request $request): Response
     {
-        $this->authorize('stock.read'); // Asumsikan hak akses read ditujukan kepada staf inventory/admin
+        $this->authorize('suppliers.read');
 
         $suppliers = Supplier::query()
             ->when($request->search, function ($query, $search) {
@@ -38,7 +38,7 @@ class SupplierController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('stock.adjust'); // Create supplier membutuhkan permission stock
+        $this->authorize('suppliers.create');
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -58,7 +58,7 @@ class SupplierController extends Controller
      */
     public function update(Request $request, Supplier $supplier)
     {
-        $this->authorize('stock.adjust');
+        $this->authorize('suppliers.update');
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -78,7 +78,7 @@ class SupplierController extends Controller
      */
     public function destroy(Supplier $supplier)
     {
-        $this->authorize('stock.adjust');
+        $this->authorize('suppliers.delete');
 
         $supplier->delete();
 

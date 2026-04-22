@@ -58,8 +58,8 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren) {
         {
             title: 'Utama',
             items: [
-                { name: 'Portal', href: '/portal', icon: Home, permission: 'dashboard.read', color: 'text-indigo-500' },
-                { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, permission: 'dashboard.read', color: 'text-indigo-400' },
+                { name: 'Portal', href: '/portal', icon: Home, color: 'text-indigo-500' },
+                { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, permission: 'dashboard.view', color: 'text-indigo-400' },
             ],
         },
         {
@@ -74,8 +74,8 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren) {
                     color: 'text-emerald-500',
                     hidden: app_settings?.enable_shift_management === false
                 },
-                { name: 'Riwayat Sales', href: '/sales', icon: Receipt, color: 'text-blue-500' },
-                { name: 'Retur Barang', href: '/returns', icon: RotateCcw, color: 'text-orange-500' },
+                { name: 'Riwayat Sales', href: '/sales', icon: Receipt, permission: 'sales.read', color: 'text-blue-500' },
+                { name: 'Retur Barang', href: '/returns', icon: RotateCcw, permission: 'sales.read', color: 'text-orange-500' },
             ].filter((item: any) => (!item.permission || can(item.permission)) && !item.hidden),
         },
         {
@@ -83,15 +83,15 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren) {
             items: [
                 { name: 'Produk', href: '/products', icon: Package, permission: 'products.read', color: 'text-rose-500' },
                 { name: 'Kategori', href: '/categories', icon: FolderTree, permission: 'categories.read', color: 'text-indigo-500' },
-                { name: 'Stock Opname', href: '/inventory/adjustment', icon: ClipboardList, permission: 'products.update', color: 'text-purple-500' },
-                { name: 'Barang Masuk', href: '/purchases', icon: Package, permission: 'stock.read', color: 'text-emerald-500' },
+                { name: 'Stock Opname', href: '/inventory/adjustment', icon: ClipboardList, permission: 'stock.adjust', color: 'text-purple-500' },
+                { name: 'Barang Masuk', href: '/purchases', icon: Package, permission: 'purchases.read', color: 'text-emerald-500' },
             ].filter((item) => !item.permission || can(item.permission)),
         },
         {
             title: 'Master Data',
             items: [
                 { name: 'Pelanggan', href: '/customers', icon: Users, permission: 'customers.read', color: 'text-indigo-500' },
-                { name: 'Pemasok', href: '/suppliers', icon: Users, permission: 'stock.read', color: 'text-blue-500' },
+                { name: 'Pemasok', href: '/suppliers', icon: Users, permission: 'suppliers.read', color: 'text-blue-500' },
             ].filter((item) => !item.permission || can(item.permission)),
         },
         {
@@ -107,8 +107,8 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren) {
             items: [
                 { name: 'Kasir & User', href: '/users', icon: Users, permission: 'users.read', color: 'text-indigo-500' },
                 { name: 'Peran & Izin', href: '/roles', icon: Shield, permission: 'roles.manage', color: 'text-red-500' },
-                { name: 'Cabang', href: '/outlets', icon: Store, permission: 'dashboard.view', color: 'text-emerald-600' },
-                { name: 'Toko', href: '/settings', icon: Settings, permission: 'dashboard.view', color: 'text-slate-500' },
+                { name: 'Cabang', href: '/outlets', icon: Store, permission: 'outlets.read', color: 'text-emerald-600' },
+                { name: 'Toko', href: '/settings', icon: Settings, permission: 'settings.manage', color: 'text-slate-500' },
             ].filter((item) => !item.permission || can(item.permission)),
         }
     ].filter(group => group.items.length > 0);

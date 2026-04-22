@@ -12,6 +12,8 @@ class DashboardController extends Controller
 {
     public function index(): Response
     {
+        $this->authorize('dashboard.view');
+
         $user = Auth::user();
         $outletId = $user->outlet_id;
         

@@ -21,7 +21,7 @@ class PurchaseController extends Controller
      */
     public function index(Request $request): Response
     {
-        $this->authorize('stock.read');
+        $this->authorize('purchases.read');
 
         $purchases = Purchase::with(['supplier', 'user'])
             ->when($request->search, function ($query, $search) {
@@ -42,7 +42,7 @@ class PurchaseController extends Controller
      */
     public function create(): Response
     {
-        $this->authorize('stock.adjust');
+        $this->authorize('purchases.create');
 
         $suppliers = Supplier::orderBy('name')->get();
         $products = Product::where('is_active', true)->with('variants')->orderBy('name')->get();
@@ -58,7 +58,7 @@ class PurchaseController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('stock.adjust');
+        $this->authorize('purchases.create');
 
         $validated = $request->validate([
             'supplier_id' => 'nullable|exists:suppliers,id',
@@ -85,7 +85,7 @@ class PurchaseController extends Controller
      */
     public function show(Purchase $purchase): Response
     {
-        $this->authorize('stock.read');
+        $this->authorize('purchases.read');
 
         return Inertia::render('Purchases/Show', [
             'purchase' => $purchase->load(['items.product', 'items.productVariant', 'user', 'supplier', 'outlet']),

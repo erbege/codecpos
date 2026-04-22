@@ -44,7 +44,7 @@ class SaleReturnController extends Controller
      */
     public function create(Sale $sale): Response
     {
-        $this->authorize('sales.create');
+        $this->authorize('sales.refund');
 
         // Load items with current returns to know remaining qty
         $sale->load(['items.product', 'items.productVariant', 'returns.items']);
@@ -59,7 +59,7 @@ class SaleReturnController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('sales.create');
+        $this->authorize('sales.refund');
 
         $validated = $request->validate([
             'sale_id' => 'required|exists:sales,id',

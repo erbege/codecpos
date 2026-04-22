@@ -14,8 +14,8 @@ class SettingController extends Controller
      */
     public function index(): Response
     {
-        // Admin only feature
-        $this->authorize('dashboard.view'); // You may want a specific 'settings.manage' permission
+        // Hanya Admin yang boleh mengakses Pengaturan Toko
+        $this->authorize('settings.manage');
 
         $settings = Setting::getMany([
             'tax_enabled',
@@ -63,7 +63,7 @@ class SettingController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('dashboard.view');
+        $this->authorize('settings.manage');
 
         $validated = $request->validate([
             'tax_enabled' => 'required|boolean',

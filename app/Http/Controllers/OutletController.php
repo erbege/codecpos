@@ -14,7 +14,7 @@ class OutletController extends Controller
      */
     public function index(): Response
     {
-        $this->authorize('dashboard.view'); // Use dashboard view as base permission for now
+        $this->authorize('outlets.read');
 
         $outlets = Outlet::orderBy('name')->get();
 
@@ -28,7 +28,7 @@ class OutletController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('dashboard.view');
+        $this->authorize('outlets.create');
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -49,7 +49,7 @@ class OutletController extends Controller
      */
     public function update(Request $request, Outlet $outlet)
     {
-        $this->authorize('dashboard.view');
+        $this->authorize('outlets.update');
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -70,7 +70,7 @@ class OutletController extends Controller
      */
     public function destroy(Outlet $outlet)
     {
-        $this->authorize('dashboard.view');
+        $this->authorize('outlets.delete');
 
         // Check if outlet has users or sales
         if ($outlet->users()->exists() || $outlet->sales()->exists()) {
