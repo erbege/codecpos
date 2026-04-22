@@ -1,5 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, usePage, Link, router } from '@inertiajs/react';
+import { printerService } from '@/Utils/printer';
 import { PageProps, Outlet } from '@/types';
 import { Calculator, PlayCircle, StopCircle, Receipt, AlertCircle, Clock, Wallet, History, ArrowRight, Printer, Eye, EyeOff, User } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
@@ -49,7 +50,7 @@ const formatDate = (dateStr: string) => {
 };
 
 export default function ShiftsIndex() {
-    const { activeShift, outletActiveShift, historyShifts, suggestedStartingCash, auth, currentOutlet, allOpenShifts, users } = usePage<Props>().props;
+    const { activeShift, outletActiveShift, historyShifts, suggestedStartingCash, auth, currentOutlet, allOpenShifts, users, app_settings } = usePage<any>().props;
     const [printingShift, setPrintingShift] = useState<Shift | null>(null);
     const [showExpected, setShowExpected] = useState(false);
     const [showHandover, setShowHandover] = useState(false);
@@ -114,7 +115,7 @@ export default function ShiftsIndex() {
                 endForm.reset();
                 toast.success('Shift kasir telah ditutup. Terima kasih!');
                 setTimeout(() => {
-                    window.print();
+                    printerService.print(app_settings as any, closedShift, 'shift');
                     setShowHandover(true);
                 }, 500);
             },
@@ -265,7 +266,7 @@ export default function ShiftsIndex() {
                         <div>
                             <h4 className="text-sm font-bold text-amber-800 dark:text-amber-400 uppercase tracking-tight">Perhatian: Anda memiliki beberapa shift terbuka</h4>
                             <p className="text-xs text-amber-700 dark:text-amber-500 mt-1">
-                                Anda memiliki shift aktif di outlet: <strong>{allOpenShifts.map(s => s.outlet?.name).join(', ')}</strong>. 
+                                Anda memiliki shift aktif di outlet: <strong>{allOpenShifts.map((s: any) => s.outlet?.name).join(', ')}</strong>. 
                                 POS hanya akan memproses transaksi untuk outlet yang sedang aktif dipilih.
                             </p>
                         </div>
@@ -477,7 +478,7 @@ export default function ShiftsIndex() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                                {historyShifts.length > 0 ? historyShifts.map((shift) => (
+                                {historyShifts.length > 0 ? historyShifts.map((shift: any) => (
                                     <tr key={shift.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-tight">{formatDate(shift.start_time)}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-gray-400 uppercase tracking-tight">{shift.end_time ? formatDate(shift.end_time) : '-'}</td>
@@ -493,7 +494,7 @@ export default function ShiftsIndex() {
                                             <button
                                                 onClick={() => {
                                                     setPrintingShift(shift);
-                                                    setTimeout(() => window.print(), 100);
+                                                    setTimeout(() => printerService.print(app_settings as any, shift, 'shift'), 100);
                                                 }}
                                                 className="p-2 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-indigo-600 transition-colors"
                                                 title="Cetak Struk Rekap"

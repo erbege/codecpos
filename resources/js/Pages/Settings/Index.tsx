@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { PageProps } from '@/types';
-import { Save, Percent, Building, Phone, Mail, FileText, MapPin, MessageSquare, CheckCircle, XCircle } from 'lucide-react';
+import { Save, Percent, Building, Phone, Mail, FileText, MapPin, MessageSquare, CheckCircle, XCircle, Printer, Calculator, Settings2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import NumericInput from '@/Components/NumericInput';
 
@@ -18,6 +18,11 @@ interface Props extends PageProps {
         base_starting_cash: number;
         tax_per_item: boolean;
         enable_shift_management: boolean;
+        pos_print_method: 'browser' | 'direct';
+        pos_printer_connection: 'network_lan' | 'bluetooth_usb';
+        pos_printer_ip: string;
+        pos_printer_port: string;
+        pos_print_proxy_url: string;
     };
 }
 
@@ -36,6 +41,11 @@ export default function SettingsIndex() {
         base_starting_cash: settings.base_starting_cash,
         tax_per_item: settings.tax_per_item,
         enable_shift_management: settings.enable_shift_management,
+        pos_print_method: settings.pos_print_method,
+        pos_printer_connection: settings.pos_printer_connection,
+        pos_printer_ip: settings.pos_printer_ip,
+        pos_printer_port: settings.pos_printer_port,
+        pos_print_proxy_url: settings.pos_print_proxy_url,
     });
 
     const handleSubmit = (e: React.FormEvent | React.MouseEvent) => {
@@ -63,8 +73,12 @@ export default function SettingsIndex() {
             <div className="max-w-4xl mx-auto space-y-6 pb-20">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-700">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight leading-none">Konfigurasi <span className="text-indigo-500">Sistem</span></h1>
-                        <p className="text-sm text-gray-500 font-medium mt-2 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded inline-block">Parameters Operasional & Kebijakan Toko</p>
+                        <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight leading-none uppercase">
+                            Pengaturan <span className="text-indigo-600">Sistem</span>
+                        </h1>
+                        <p className="text-xs text-indigo-500 font-bold mt-2 uppercase tracking-[0.2em] bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1 rounded-full inline-block border border-indigo-100 dark:border-indigo-500/20">
+                            Parameters Operasional & Kebijakan Toko
+                        </p>
                     </div>
                     
                     <div className="flex gap-2">
@@ -88,15 +102,15 @@ export default function SettingsIndex() {
 
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     {/* Left Column: Shop Identity */}
-                    <div className="lg:col-span-8 space-y-6">
-                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-left-4 duration-700">
-                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3 bg-gray-50/50 dark:bg-transparent">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                                    <Building className="w-5 h-5 text-indigo-600" />
+                    <div className="lg:col-span-7 space-y-6">
+                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-[2rem] overflow-hidden shadow-xl shadow-gray-200/20 dark:shadow-none animate-in fade-in slide-in-from-left-4 duration-700">
+                            <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-800 flex items-center gap-4 bg-gradient-to-r from-gray-50/80 to-white dark:from-gray-800/20 dark:to-transparent">
+                                <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                                    <Building className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="text-base font-bold text-gray-800 dark:text-white tracking-tight">Identitas Toko</h3>
-                                    <p className="text-sm text-gray-500">Informasi yang akan dicetak pada struk & laporan</p>
+                                    <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight uppercase">Identitas Toko</h3>
+                                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Informasi yang akan dicetak pada struk & laporan</p>
                                 </div>
                             </div>
                             
@@ -183,18 +197,63 @@ export default function SettingsIndex() {
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    {/* Right Column: Parameters */}
-                    <div className="lg:col-span-4 space-y-6">
-                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-right-4 duration-700">
-                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3 bg-gray-50/50 dark:bg-transparent">
-                                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                                    <Percent className="w-5 h-5 text-emerald-600" />
+                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-[2rem] overflow-hidden shadow-xl shadow-gray-200/20 dark:shadow-none animate-in fade-in slide-in-from-left-4 duration-700">
+                            <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-800 flex items-center gap-4 bg-gradient-to-r from-indigo-50/80 to-white dark:from-indigo-900/10 dark:to-transparent">
+                                <div className="w-12 h-12 rounded-2xl bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                                    <Settings2 className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="text-base font-bold text-gray-800 dark:text-white tracking-tight">Kebijakan Pajak</h3>
-                                    <p className="text-sm text-gray-500">Konfigurasi PPN / VAT</p>
+                                    <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight uppercase">Preferensi Kasir</h3>
+                                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Konfigurasi Pengelolaan Shift</p>
+                                </div>
+                            </div>
+                            
+                            <div className="p-8 space-y-6">
+                                <div className="space-y-3">
+                                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Modal Awal Standar (Rp)</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-gray-400 font-bold">Rp</div>
+                                        <NumericInput
+                                            value={form.data.base_starting_cash}
+                                            onChange={(val) => form.setData('base_starting_cash', parseFloat(val) || 0)}
+                                            className="w-full pl-12 pr-6 py-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-gray-500 font-medium italic leading-relaxed pt-1">Digunakan sebagai saran modal awal jika tidak ada saldo shift sebelumnya untuk dibawa (Carry-over).</p>
+                                    {form.errors.base_starting_cash && <p className="text-[10px] text-red-500 font-bold uppercase">{form.errors.base_starting_cash}</p>}
+                                </div>
+
+                                <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
+                                    <div className="flex items-center justify-between p-4 rounded-2xl bg-indigo-50/30 dark:bg-indigo-500/5 border border-dashed border-indigo-200 dark:border-indigo-500/30">
+                                        <div>
+                                            <p className="text-sm font-bold text-indigo-900 dark:text-indigo-300">Wajibkan Manajemen Shift</p>
+                                            <p className="text-[11px] text-indigo-500 font-medium mt-1 leading-tight">Jika aktif, kasir wajib mencatat saldo kas laci setiap awal dan akhir tugas.</p>
+                                        </div>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                className="sr-only peer" 
+                                                checked={form.data.enable_shift_management ?? true}
+                                                onChange={(e) => form.setData('enable_shift_management', e.target.checked)}
+                                            />
+                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-500 shadow-sm shadow-indigo-500/20"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Column: Key Configurations */}
+                    <div className="lg:col-span-5 space-y-6">
+                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-[2rem] overflow-hidden shadow-xl shadow-gray-200/20 dark:shadow-none animate-in fade-in slide-in-from-right-4 duration-700">
+                            <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-800 flex items-center gap-4 bg-gradient-to-r from-emerald-50/80 to-white dark:from-emerald-900/10 dark:to-transparent">
+                                <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                                    <Percent className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight uppercase">Kebijakan Pajak</h3>
+                                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Konfigurasi PPN / VAT</p>
                                 </div>
                             </div>
                             
@@ -249,50 +308,83 @@ export default function SettingsIndex() {
                                 )}
                             </div>
                         </div>
-
-                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-right-4 duration-700">
-                            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3 bg-gray-50/50 dark:bg-transparent">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                                    <Save className="w-5 h-5 text-indigo-600" />
+                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-[2rem] overflow-hidden shadow-xl shadow-gray-200/20 dark:shadow-none animate-in fade-in slide-in-from-right-4 duration-700">
+                            <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-800 flex items-center gap-4 bg-gradient-to-r from-orange-50/80 to-white dark:from-orange-900/10 dark:to-transparent">
+                                <div className="w-12 h-12 rounded-2xl bg-orange-500 text-white flex items-center justify-center shadow-lg shadow-orange-500/30">
+                                    <Printer className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="text-base font-bold text-gray-800 dark:text-white tracking-tight">Preferensi Kasir</h3>
-                                    <p className="text-sm text-gray-500">Konfigurasi Pengelolaan Shift</p>
+                                    <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight uppercase">Pengaturan Printer</h3>
+                                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Konfigurasi Struk Thermal</p>
                                 </div>
                             </div>
                             
                             <div className="p-8 space-y-6">
                                 <div className="space-y-3">
-                                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Modal Awal Standar (Rp)</label>
-                                    <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-gray-400 font-bold">Rp</div>
-                                        <NumericInput
-                                            value={form.data.base_starting_cash}
-                                            onChange={(val) => form.setData('base_starting_cash', parseFloat(val) || 0)}
-                                            className="w-full pl-12 pr-6 py-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all"
-                                        />
-                                    </div>
-                                    <p className="text-xs text-gray-500 font-medium italic leading-relaxed pt-1">Digunakan sebagai saran modal awal jika tidak ada saldo shift sebelumnya untuk dibawa (Carry-over).</p>
-                                    {form.errors.base_starting_cash && <p className="text-[10px] text-red-500 font-bold uppercase">{form.errors.base_starting_cash}</p>}
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Metode Pencetakan</label>
+                                    <select 
+                                        className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all"
+                                        value={form.data.pos_print_method}
+                                        onChange={(e) => form.setData('pos_print_method', e.target.value as any)}
+                                    >
+                                        <option value="browser">Dialog Browser (Standar)</option>
+                                        <option value="direct">Cetak Langsung (ESC/POS)</option>
+                                    </select>
+                                    <p className="text-[10px] text-gray-500 font-medium italic">Standard: Muncul dialog printer. Direct: Struk langsung keluar.</p>
                                 </div>
 
-                                <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
-                                    <div className="flex items-center justify-between p-4 rounded-2xl bg-indigo-50/30 dark:bg-indigo-500/5 border border-dashed border-indigo-200 dark:border-indigo-500/30">
-                                        <div>
-                                            <p className="text-sm font-bold text-indigo-900 dark:text-indigo-300">Wajibkan Manajemen Shift</p>
-                                            <p className="text-[11px] text-indigo-500 font-medium mt-1 leading-tight">Jika aktif, kasir wajib mencatat saldo kas laci setiap awal dan akhir tugas.</p>
+                                {form.data.pos_print_method === 'direct' && (
+                                    <div className="space-y-6 pt-4 border-t border-gray-50 dark:border-gray-800 animate-in slide-in-from-top-4 duration-300">
+                                        <div className="space-y-3">
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Jenis Koneksi</label>
+                                            <select 
+                                                className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all"
+                                                value={form.data.pos_printer_connection}
+                                                onChange={(e) => form.setData('pos_printer_connection', e.target.value as any)}
+                                            >
+                                                <option value="network_lan">Network (LAN/WiFi)</option>
+                                                <option value="bluetooth_usb">Bluetooth / USB (via Plugin)</option>
+                                            </select>
                                         </div>
-                                        <label className="relative inline-flex items-center cursor-pointer">
-                                            <input 
-                                                type="checkbox" 
-                                                className="sr-only peer" 
-                                                checked={form.data.enable_shift_management ?? true}
-                                                onChange={(e) => form.setData('enable_shift_management', e.target.checked)}
-                                            />
-                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-500 shadow-sm shadow-indigo-500/20"></div>
-                                        </label>
+
+                                        {form.data.pos_printer_connection === 'network_lan' ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                <div className="md:col-span-2 space-y-2">
+                                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">IP Printer</label>
+                                                    <input 
+                                                        type="text" 
+                                                        value={form.data.pos_printer_ip}
+                                                        onChange={(e) => form.setData('pos_printer_ip', e.target.value)}
+                                                        className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-900 dark:text-white"
+                                                        placeholder="192.168.1.100"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Port</label>
+                                                    <input 
+                                                        type="text" 
+                                                        value={form.data.pos_printer_port}
+                                                        onChange={(e) => form.setData('pos_printer_port', e.target.value)}
+                                                        className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-900 dark:text-white text-center"
+                                                        placeholder="9100"
+                                                    />
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">URL Proxy Plugin (Localhost)</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={form.data.pos_print_proxy_url}
+                                                    onChange={(e) => form.setData('pos_print_proxy_url', e.target.value)}
+                                                    className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-900 dark:text-white"
+                                                    placeholder="http://localhost:8080"
+                                                />
+                                                <p className="text-[10px] text-gray-500 font-medium">Bekerja pada Cloud/SaaS dengan bantuan plugin printer lokal.</p>
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
+                                )}
                             </div>
                         </div>
                     </div>

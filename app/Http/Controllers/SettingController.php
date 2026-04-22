@@ -29,6 +29,11 @@ class SettingController extends Controller
             'base_starting_cash',
             'tax_per_item',
             'enable_shift_management',
+            'pos_print_method',
+            'pos_printer_connection',
+            'pos_printer_ip',
+            'pos_printer_port',
+            'pos_print_proxy_url',
         ]);
 
         return Inertia::render('Settings/Index', [
@@ -44,6 +49,11 @@ class SettingController extends Controller
                 'base_starting_cash' => (float)($settings['base_starting_cash'] ?? 0),
                 'tax_per_item' => filter_var($settings['tax_per_item'] ?? 'false', FILTER_VALIDATE_BOOLEAN),
                 'enable_shift_management' => filter_var($settings['enable_shift_management'] ?? 'true', FILTER_VALIDATE_BOOLEAN),
+                'pos_print_method' => $settings['pos_print_method'] ?? 'browser',
+                'pos_printer_connection' => $settings['pos_printer_connection'] ?? 'network_lan',
+                'pos_printer_ip' => $settings['pos_printer_ip'] ?? '',
+                'pos_printer_port' => $settings['pos_printer_port'] ?? '9100',
+                'pos_print_proxy_url' => $settings['pos_print_proxy_url'] ?? 'http://localhost:8080',
             ]
         ]);
     }
@@ -67,6 +77,11 @@ class SettingController extends Controller
             'base_starting_cash' => 'nullable|numeric|min:0',
             'tax_per_item' => 'nullable|boolean',
             'enable_shift_management' => 'nullable|boolean',
+            'pos_print_method' => 'required|string|in:browser,direct',
+            'pos_printer_connection' => 'required|string|in:network_lan,bluetooth_usb',
+            'pos_printer_ip' => 'nullable|string',
+            'pos_printer_port' => 'nullable|string',
+            'pos_print_proxy_url' => 'nullable|string',
         ]);
 
         Setting::set('tax_enabled', !empty($validated['tax_enabled']) ? 'true' : 'false');
@@ -80,6 +95,11 @@ class SettingController extends Controller
         Setting::set('base_starting_cash', $validated['base_starting_cash'] ?? 0);
         Setting::set('tax_per_item', !empty($validated['tax_per_item']) ? 'true' : 'false');
         Setting::set('enable_shift_management', !empty($validated['enable_shift_management']) ? 'true' : 'false');
+        Setting::set('pos_print_method', $validated['pos_print_method']);
+        Setting::set('pos_printer_connection', $validated['pos_printer_connection']);
+        Setting::set('pos_printer_ip', $validated['pos_printer_ip'] ?? '');
+        Setting::set('pos_printer_port', $validated['pos_printer_port'] ?? '9100');
+        Setting::set('pos_print_proxy_url', $validated['pos_print_proxy_url'] ?? 'http://localhost:8080');
 
         return back()->with('success', 'Pengaturan berhasil disimpan.');
     }

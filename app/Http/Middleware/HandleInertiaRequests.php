@@ -44,6 +44,11 @@ class HandleInertiaRequests extends Middleware
                 'shop_npwp' => \App\Models\Setting::get('shop_npwp', '-'),
                 'shop_footer_notes' => \App\Models\Setting::get('shop_footer_notes', 'Terima kasih telah berbelanja!'),
                 'enable_shift_management' => filter_var(\App\Models\Setting::get('enable_shift_management', 'true'), FILTER_VALIDATE_BOOLEAN),
+                'pos_print_method' => \App\Models\Setting::get('pos_print_method', 'browser'),
+                'pos_printer_connection' => \App\Models\Setting::get('pos_printer_connection', 'network_lan'),
+                'pos_printer_ip' => \App\Models\Setting::get('pos_printer_ip', ''),
+                'pos_printer_port' => \App\Models\Setting::get('pos_printer_port', '9100'),
+                'pos_print_proxy_url' => \App\Models\Setting::get('pos_print_proxy_url', 'http://localhost:8080'),
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

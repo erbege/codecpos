@@ -57,7 +57,7 @@ export default function Guest({ children, maxWidth = 'max-w-md', showCard = true
 
                 {/* Footer Link */}
                 <p className="mt-8 text-center text-slate-500 text-xs font-bold uppercase tracking-widest">
-                    &copy; {new Date().getFullYear()} CodecPOS Professional
+                    &copy; {new Date().getFullYear()} CodeCrafter POS
                 </p>
             </div>
         </div>

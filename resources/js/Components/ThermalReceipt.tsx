@@ -159,7 +159,7 @@ export default function ThermalReceipt({ sale }: Props) {
             <div className="text-center space-y-1 pt-2 pb-8">
                 <p className="font-bold">TERIMA KASIH</p>
                 <p className="text-[8px] uppercase">{app_settings?.shop_footer_notes || 'Barang yang sudah dibeli tidak dapat ditukar atau dikembalikan.'}</p>
-                <p className="text-[8px] italic">Powered by CodecPOS Professional</p>
+                <p className="text-[8px] italic">Powered by CodecCrafter POS</p>
             </div>
         </div>
     );

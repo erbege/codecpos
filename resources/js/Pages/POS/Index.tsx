@@ -1,5 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, usePage, useForm } from '@inertiajs/react';
+import { printerService } from '@/Utils/printer';
 import { PageProps, Product, Category, Customer, Outlet } from '@/types';
 import { useCartStore } from '@/stores/useCartStore';
 import { useAppStore } from '@/stores/useAppStore';
@@ -33,6 +34,7 @@ import Drawer from '@/Components/Drawer';
 import Modal from '@/Components/Modal';
 import NumericInput from '@/Components/NumericInput';
 import SwitchUserModal from '@/Components/SwitchUserModal';
+import PrinterStatusIndicator from '@/Components/PrinterStatusIndicator';
 
 interface Props extends PageProps {
     products: Product[];
@@ -147,11 +149,11 @@ export default function POS() {
     useEffect(() => {
         if (completedSale) {
             const timer = setTimeout(() => {
-                window.print();
+                printerService.print(app_settings as any, completedSale, 'sale');
             }, 1000); // Increased delay for stability
             return () => clearTimeout(timer);
         }
-    }, [completedSale]);
+    }, [completedSale, app_settings]);
 
     useEffect(() => {
         searchRef.current?.focus();
@@ -283,7 +285,7 @@ export default function POS() {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key.toLowerCase() === 'p') {
                 e.preventDefault();
-                window.print();
+                printerService.print(app_settings as any, completedSale, 'sale');
             }
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -505,6 +507,10 @@ export default function POS() {
                                     </select>
                                 </div>
                             )}
+
+                            <div className="flex-shrink-0 flex items-center">
+                                <PrinterStatusIndicator settings={app_settings as any} />
+                            </div>
 
                             {/* Ganti Shift Button (Only when shift management is disabled) */}
                             {!enableShiftManagement && (
@@ -1012,7 +1018,7 @@ export default function POS() {
                         
                         <div className="space-y-3">
                             <button
-                                onClick={() => window.print()}
+                                onClick={() => printerService.print(app_settings as any, completedSale, 'sale')}
                                 className="w-full py-4 rounded-xl bg-indigo-500 text-slate-950 font-black text-lg hover:bg-indigo-600 shadow-xl shadow-indigo-500/20 transition-all flex items-center justify-center gap-3 uppercase tracking-widest"
                             >
                                 <Printer className="w-6 h-6" /> CETAK ULANG STRUK (P)
