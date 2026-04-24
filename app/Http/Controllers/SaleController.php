@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Sale;
 use App\Services\ProductService;
 use App\Services\SaleService;
+use App\Services\PromotionService;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\Shift;
@@ -19,6 +20,7 @@ class SaleController extends Controller
     public function __construct(
         protected SaleService $saleService,
         protected ProductService $productService,
+        protected PromotionService $promotionService,
     ) {}
 
     /**
@@ -112,6 +114,7 @@ class SaleController extends Controller
             'outlets' => $isAdmin ? \App\Models\Outlet::where('is_active', true)->orderBy('name')->get() : [],
             'canSwitchOutlet' => $isAdmin,
             'users' => \App\Models\User::select('id', 'name', 'email')->orderBy('name')->get(),
+            'activePromotions' => $this->promotionService->getPromotionsForPOS($outletId),
         ]);
     }
 

@@ -82,6 +82,8 @@ export interface SaleItem {
     qty: number;
     price: number;
     discount: number;
+    promo_discount: number;
+    promotion_id?: number | null;
     subtotal: number;
 }
 
@@ -97,6 +99,9 @@ export interface Sale {
     subtotal: number;
     tax: number;
     discount: number;
+    promo_discount: number;
+    promo_name?: string | null;
+    promotion_id?: number | null;
     total: number;
     paid: number;
     change: number;

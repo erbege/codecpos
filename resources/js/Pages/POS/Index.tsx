@@ -46,6 +46,32 @@ interface Props extends PageProps {
     currentOutletId: number | null;
     canSwitchOutlet: boolean;
     users: any[];
+    activePromotions?: {
+        product: Array<{
+            id: number;
+            name: string;
+            discount_type: 'percentage' | 'fixed';
+            discount_value: number;
+            max_discount: number | null;
+            min_purchase: number | null;
+            priority: number;
+            items: Array<{
+                product_id: number;
+                product_variant_id: number | null;
+                max_qty: number | null;
+                remaining_qty: number | null;
+            }>;
+        }>;
+        global: Array<{
+            id: number;
+            name: string;
+            discount_type: 'percentage' | 'fixed';
+            discount_value: number;
+            max_discount: number | null;
+            min_purchase: number | null;
+            priority: number;
+        }>;
+    };
 }
 
 const formatCurrency = (value: number) => {
@@ -55,7 +81,7 @@ const formatCurrency = (value: number) => {
 
 
 export default function POS() {
-    const { auth, flash, products, categories, customers, taxRate, taxPerItem, outlets, currentOutletId, canSwitchOutlet, users, app_settings } = usePage<Props>().props;
+    const { auth, flash, products, categories, customers, taxRate, taxPerItem, outlets, currentOutletId, canSwitchOutlet, users, app_settings, activePromotions } = usePage<Props>().props;
     const cart = useCartStore();
     const { posViewMode, setPosViewMode } = useAppStore();
     const [search, setSearch] = useState('');
@@ -326,6 +352,57 @@ export default function POS() {
         });
         return flat;
     }, [products]);
+
+    // ─── Promo Helpers ─────────────────────────────────────────────────
+    const getProductPromo = (productId: number, variantId: number | null) => {
+        if (!activePromotions?.product) return null;
+        for (const promo of activePromotions.product) {
+            const match = promo.items.find(i =>
+                i.product_id === productId &&
+                (i.product_variant_id === variantId || i.product_variant_id === null)
+            );
+            if (match) {
+                if (match.remaining_qty !== null && match.remaining_qty <= 0) continue;
+                return { ...promo, matchedItem: match };
+            }
+        }
+        return null;
+    };
+
+    const getPromoLabel = (promo: any) => {
+        if (promo.discount_type === 'percentage') return `-${promo.discount_value}%`;
+        return `-${formatCurrency(promo.discount_value)}`;
+    };
+
+    const calcPromoPrice = (price: number, promo: any) => {
+        if (promo.discount_type === 'percentage') {
+            let disc = (price * promo.discount_value) / 100;
+            if (promo.max_discount && disc > promo.max_discount) disc = promo.max_discount;
+            return Math.max(0, price - disc);
+        }
+        return Math.max(0, price - promo.discount_value);
+    };
+
+    const bestGlobalPromo = useMemo(() => {
+        if (!activePromotions?.global?.length) return null;
+        const sub = subtotal;
+        let best: any = null;
+        let bestDisc = 0;
+        for (const promo of activePromotions.global) {
+            if (promo.min_purchase && sub < promo.min_purchase) continue;
+            let disc = promo.discount_type === 'percentage'
+                ? Math.min((sub * promo.discount_value) / 100, promo.max_discount || Infinity)
+                : promo.discount_value;
+            disc = Math.min(disc, sub);
+            if (disc > bestDisc) { bestDisc = disc; best = { ...promo, calculatedDiscount: disc }; }
+        }
+        return best;
+    }, [activePromotions?.global, subtotal]);
+
+    const nearestGlobalPromo = useMemo(() => {
+        if (!activePromotions?.global?.length || bestGlobalPromo) return null;
+        return activePromotions.global.find(p => p.min_purchase && subtotal < p.min_purchase) || null;
+    }, [activePromotions?.global, subtotal, bestGlobalPromo]);
 
     const filteredProducts = flattenedProducts.filter((p) => {
         const matchSearch = !search || 
@@ -615,7 +692,29 @@ export default function POS() {
                                             </div>
                                             <p className="text-sm font-semibold text-gray-900 dark:text-white truncate leading-tight tracking-tight">{product.name}</p>
                                             <div className="flex flex-col mt-1.5">
-                                                <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">{formatCurrency(Number(product.price))}</p>
+                                                {(() => {
+                                                    const pid = product.is_variant ? product.real_product_id : product.id;
+                                                    const vid = product.is_variant ? product.variant_id : null;
+                                                    const promo = getProductPromo(pid, vid);
+                                                    if (promo) {
+                                                        const promoPrice = calcPromoPrice(Number(product.price), promo);
+                                                        return (
+                                                            <>
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <p className="text-sm font-bold text-rose-500">{formatCurrency(promoPrice)}</p>
+                                                                    <span className="text-[9px] line-through text-gray-400">{formatCurrency(Number(product.price))}</span>
+                                                                </div>
+                                                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 mt-0.5 rounded bg-rose-500/10 text-rose-500 text-[9px] font-black uppercase tracking-tight w-fit">
+                                                                    <Tag className="w-2.5 h-2.5" />{getPromoLabel(promo)}
+                                                                </span>
+                                                                {promo.matchedItem.remaining_qty !== null && (
+                                                                    <span className="text-[9px] text-amber-500 font-bold">Sisa {promo.matchedItem.remaining_qty} unit</span>
+                                                                )}
+                                                            </>
+                                                        );
+                                                    }
+                                                    return <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">{formatCurrency(Number(product.price))}</p>;
+                                                })()}
                                                 <div className="flex items-center justify-between mt-1">
                                                     <span className="text-[10px] font-medium text-slate-500 uppercase tracking-tight">
                                                         STOK: {product.stock}
@@ -649,7 +748,23 @@ export default function POS() {
                                             >
                                                 <td className="px-5 py-3.5 text-[11px] font-bold text-slate-400 tracking-tighter">{product.sku}</td>
                                                 <td className="px-5 py-3.5 text-[13px] font-black text-slate-900 dark:text-white uppercase tracking-tight">{product.name}</td>
-                                                <td className="px-5 py-3.5 text-right font-black text-indigo-600 dark:text-indigo-400 text-[13px]">{formatCurrency(Number(product.price))}</td>
+                                                <td className="px-5 py-3.5 text-right">
+                                                    {(() => {
+                                                        const pid = product.is_variant ? product.real_product_id : product.id;
+                                                        const vid = product.is_variant ? product.variant_id : null;
+                                                        const promo = getProductPromo(pid, vid);
+                                                        if (promo) {
+                                                            const pp = calcPromoPrice(Number(product.price), promo);
+                                                            return (
+                                                                <div className="flex flex-col items-end">
+                                                                    <span className="font-black text-rose-500 text-[13px]">{formatCurrency(pp)}</span>
+                                                                    <span className="text-[10px] line-through text-gray-400">{formatCurrency(Number(product.price))}</span>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return <span className="font-black text-indigo-600 dark:text-indigo-400 text-[13px]">{formatCurrency(Number(product.price))}</span>;
+                                                    })()}
+                                                </td>
                                                 <td className="px-5 py-3.5 text-center font-bold text-slate-600 dark:text-slate-400">
                                                     <span className={`px-2 py-1 rounded-md ${product.stock < 10 ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600' : ''}`}>{product.stock}</span>
                                                 </td>
@@ -707,6 +822,19 @@ export default function POS() {
                                         
                                         <div className="flex flex-col items-end">
                                             {item.discount > 0 && <span className="text-[10px] text-red-500 font-semibold">-{formatCurrency(item.discount)}</span>}
+                                            {(() => {
+                                                const p = item.product as any;
+                                                const pid = typeof p.id === 'string' && p.id.startsWith('v_') ? p.real_product_id : p.id;
+                                                const vid = p.is_variant ? p.variant_id : null;
+                                                const promo = getProductPromo(pid as number, vid);
+                                                if (promo && (!promo.min_purchase || subtotal >= promo.min_purchase)) {
+                                                    return <span className="text-[9px] text-rose-500 font-bold flex items-center gap-0.5"><Tag className="w-2.5 h-2.5" />{promo.name}</span>;
+                                                }
+                                                if (promo && promo.min_purchase && subtotal < promo.min_purchase) {
+                                                    return <span className="text-[9px] text-amber-500">Min. {formatCurrency(promo.min_purchase)}</span>;
+                                                }
+                                                return null;
+                                            })()}
                                             <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(item.product.price * item.qty - item.discount)}</p>
                                         </div>
                                     </div>
@@ -774,6 +902,18 @@ export default function POS() {
                                 <div className="flex justify-between text-xs font-semibold text-gray-500 uppercase">
                                     <span>PPN ({taxRate}%)</span>
                                     <span>{formatCurrency(taxAmount)}</span>
+                                </div>
+                            )}
+                            {/* Global Promo Banner */}
+                            {bestGlobalPromo && (
+                                <div className="flex justify-between items-center text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg px-2.5 py-1.5">
+                                    <span className="flex items-center gap-1"><Tag className="w-3 h-3" />🎉 {bestGlobalPromo.name}</span>
+                                    <span>-{formatCurrency(bestGlobalPromo.calculatedDiscount)}</span>
+                                </div>
+                            )}
+                            {!bestGlobalPromo && nearestGlobalPromo && (
+                                <div className="text-[10px] text-amber-500 font-bold bg-amber-50 dark:bg-amber-500/10 rounded-lg px-2.5 py-1.5">
+                                    💡 Belanja {formatCurrency(nearestGlobalPromo.min_purchase! - subtotal)} lagi untuk promo "{nearestGlobalPromo.name}"
                                 </div>
                             )}
                             <div className="flex justify-between text-xl font-bold text-gray-900 dark:text-white border-t-2 border-dashed border-gray-200 dark:border-gray-800 pt-2 mt-2">

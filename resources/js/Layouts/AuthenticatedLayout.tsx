@@ -22,6 +22,7 @@ import {
     Clock,
     ClipboardList,
     BarChart3,
+    Tag,
 } from 'lucide-react';
 import { PropsWithChildren, useState, useEffect } from 'react';
 import Tooltip from '@/Components/Tooltip';
@@ -76,6 +77,7 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren) {
                 },
                 { name: 'Riwayat Sales', href: '/sales', icon: Receipt, permission: 'sales.read', color: 'text-blue-500' },
                 { name: 'Retur Barang', href: '/returns', icon: RotateCcw, permission: 'sales.read', color: 'text-orange-500' },
+                { name: 'Promo Diskon', href: '/promotions', icon: Tag, permission: 'promotions.read', color: 'text-pink-500' },
             ].filter((item: any) => (!item.permission || can(item.permission)) && !item.hidden),
         },
         {

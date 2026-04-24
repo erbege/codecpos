@@ -15,6 +15,8 @@ class SaleItem extends Model
         'qty',
         'price',
         'discount',
+        'promo_discount',
+        'promotion_id',
         'subtotal',
     ];
 
@@ -22,6 +24,7 @@ class SaleItem extends Model
         'qty' => 'integer',
         'price' => 'decimal:2',
         'discount' => 'decimal:2',
+        'promo_discount' => 'decimal:2',
         'subtotal' => 'decimal:2',
     ];
 
@@ -38,5 +41,10 @@ class SaleItem extends Model
     public function productVariant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class);
+    }
+
+    public function promotion(): BelongsTo
+    {
+        return $this->belongsTo(Promotion::class);
     }
 }

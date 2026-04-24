@@ -12,7 +12,8 @@ use Illuminate\Support\Facades\DB;
 class SaleService
 {
     public function __construct(
-        protected ProductService $productService
+        protected ProductService $productService,
+        protected PromotionService $promotionService,
     ) {}
 
     /**
@@ -77,17 +78,23 @@ class SaleService
 
             $discount = $data['discount'] ?? 0;
             $tax = $data['tax'] ?? 0;
+
+            // ─── Promo: Calculate global promo discount ────────────────────
+            $globalPromoResult = $this->promotionService->calculateGlobalPromoDiscount($subtotal, $outletId);
+            $promoDiscount = $globalPromoResult['discount'];
+            $promoPromotionId = $globalPromoResult['promotion_id'];
+            $promoName = $globalPromoResult['promo_name'];
             
             // Get tax setting to determine if price was already inclusive
             $taxPerItem = filter_var(\App\Models\Setting::get('tax_per_item', 'false'), FILTER_VALIDATE_BOOLEAN);
             
             if ($taxPerItem) {
                 // If tax is per-item (Inclusive), subtotal already contains tax.
-                // Total is subtotal - (global) discount.
-                $total = $subtotal - $discount;
+                // Total is subtotal - (global) discount - promo discount.
+                $total = $subtotal - $discount - $promoDiscount;
             } else {
-                // If tax is exclusive, total is subtotal - discount + tax.
-                $total = ($subtotal + $tax) - $discount;
+                // If tax is exclusive, total is subtotal - discount - promo + tax.
+                $total = ($subtotal + $tax) - $discount - $promoDiscount;
             }
             
             $paid = $data['paid'];
@@ -106,6 +113,9 @@ class SaleService
                 'subtotal' => $subtotal,
                 'tax' => $tax,
                 'discount' => $discount,
+                'promo_discount' => $promoDiscount,
+                'promo_name' => $promoName,
+                'promotion_id' => $promoPromotionId,
                 'total' => $total,
                 'paid' => $paid,
                 'change' => $change,
@@ -114,8 +124,43 @@ class SaleService
                 'notes' => $data['notes'] ?? null,
             ]);
 
+            // Track which promo IDs were used (for usage_count increment)
+            $usedPromoIds = collect();
+            if ($promoPromotionId) {
+                $usedPromoIds->push($promoPromotionId);
+            }
+
             // 4. Create sale items and update stock
             foreach ($items as $item) {
+                // ─── Promo: Calculate item promo discount ────────────────
+                $itemPromoResult = $this->promotionService->calculateItemPromoDiscount(
+                    $item['product']->id,
+                    $item['variant'] ? $item['variant']->id : null,
+                    $item['price'],
+                    $item['qty'],
+                    $subtotal,
+                    $outletId
+                );
+
+                $itemPromoDiscount = $itemPromoResult['discount'];
+                $itemPromoId = $itemPromoResult['promotion_id'];
+
+                // Option C: Use the larger discount (manual vs promo)
+                // If promo discount is bigger, use it; otherwise keep manual discount
+                $finalManualDiscount = $item['discount'];
+                $finalPromoDiscount = 0;
+                $finalItemPromoId = null;
+
+                if ($itemPromoDiscount > $finalManualDiscount) {
+                    // Promo wins — zero out manual, use promo
+                    $finalPromoDiscount = $itemPromoDiscount;
+                    $finalManualDiscount = 0;
+                    $finalItemPromoId = $itemPromoId;
+                }
+                // else: manual discount wins, promo is not applied
+
+                $finalSubtotal = ($item['price'] * $item['qty']) - $finalManualDiscount - $finalPromoDiscount;
+
                 SaleItem::create([
                     'sale_id' => $sale->id,
                     'product_id' => $item['product']->id,
@@ -123,9 +168,24 @@ class SaleService
                     'product_name' => $item['product_name'],
                     'qty' => $item['qty'],
                     'price' => $item['price'],
-                    'discount' => $item['discount'],
-                    'subtotal' => $item['subtotal'],
+                    'discount' => $finalManualDiscount,
+                    'promo_discount' => $finalPromoDiscount,
+                    'promotion_id' => $finalItemPromoId,
+                    'subtotal' => $finalSubtotal,
                 ]);
+
+                // Track item promo usage
+                if ($finalItemPromoId) {
+                    $usedPromoIds->push($finalItemPromoId);
+
+                    // Record qty usage for Tipe E
+                    $this->promotionService->recordItemQtyUsage(
+                        $finalItemPromoId,
+                        $item['product']->id,
+                        $item['variant'] ? $item['variant']->id : null,
+                        $item['qty']
+                    );
+                }
 
                 // Decrease stock in outlet settings
                 \App\Models\OutletProductSetting::where('outlet_id', $outletId)
@@ -148,6 +208,11 @@ class SaleService
 
                 // PHASE 2 OPTIMIZATION: Invalidate product cache for this outlet
                 $this->productService->invalidateProductCache($item['product']->id, $outletId);
+            }
+
+            // ─── Promo: Record usage count for all used promos ─────────
+            foreach ($usedPromoIds->unique() as $promoId) {
+                $this->promotionService->recordUsage($promoId);
             }
 
             return $sale->load('items.product', 'items.productVariant', 'user', 'customer');

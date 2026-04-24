@@ -10,6 +10,7 @@ use App\Http\Controllers\Inventory\StockAdjustmentController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Inertia\Inertia;
 
@@ -86,6 +87,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/returns/create/{sale}', [\App\Http\Controllers\SaleReturnController::class, 'create'])->name('returns.create');
     Route::post('/returns', [\App\Http\Controllers\SaleReturnController::class, 'store'])->name('returns.store');
     Route::get('/returns/{saleReturn}', [\App\Http\Controllers\SaleReturnController::class, 'show'])->name('returns.show');
+
+    // Promotions / Promo Diskon
+    Route::resource('promotions', PromotionController::class)->except(['show']);
+    Route::post('/promotions/{promotion}/toggle', [PromotionController::class, 'toggle'])->name('promotions.toggle');
 
     // Reports
     Route::prefix('reports')->group(function () {

@@ -130,6 +130,16 @@ export default function SaleShow() {
                                                     <span className="font-bold text-gray-900 dark:text-white uppercase tracking-tight text-xs leading-none">
                                                         {item.product_name}
                                                     </span>
+                                                    {Number(item.promo_discount) > 0 && (
+                                                        <span className="flex items-center gap-1 mt-1 text-[10px] font-bold text-rose-500">
+                                                            <Tag className="w-3 h-3" /> Promo -{formatCurrency(Number(item.promo_discount))}
+                                                        </span>
+                                                    )}
+                                                    {Number(item.discount) > 0 && (
+                                                        <span className="block mt-0.5 text-[10px] font-semibold text-orange-500">
+                                                            Diskon Manual -{formatCurrency(Number(item.discount))}
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-5 text-right font-semibold text-gray-500 text-xs">
                                                     {formatCurrency(Number(item.price))}
@@ -159,8 +169,16 @@ export default function SaleShow() {
                                     </div>
                                     {Number(sale.discount) > 0 && (
                                         <div className="flex justify-between items-center text-xs">
-                                            <span className="font-bold text-rose-400 uppercase tracking-widest">Discount</span>
+                                            <span className="font-bold text-rose-400 uppercase tracking-widest">Diskon Manual</span>
                                             <span className="font-bold text-rose-500">-{formatCurrency(Number(sale.discount))}</span>
+                                        </div>
+                                    )}
+                                    {Number(sale.promo_discount) > 0 && (
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="font-bold text-rose-400 uppercase tracking-widest flex items-center gap-1">
+                                                <Tag className="w-3 h-3" /> Promo {sale.promo_name && `(${sale.promo_name})`}
+                                            </span>
+                                            <span className="font-bold text-rose-500">-{formatCurrency(Number(sale.promo_discount))}</span>
                                         </div>
                                     )}
                                     {Number(sale.tax) > 0 && (

@@ -16,6 +16,9 @@ class Sale extends Model
         'subtotal',
         'tax',
         'discount',
+        'promo_discount',
+        'promo_name',
+        'promotion_id',
         'total',
         'paid',
         'change',
@@ -28,6 +31,7 @@ class Sale extends Model
         'subtotal' => 'decimal:2',
         'tax' => 'decimal:2',
         'discount' => 'decimal:2',
+        'promo_discount' => 'decimal:2',
         'total' => 'decimal:2',
         'paid' => 'decimal:2',
         'change' => 'decimal:2',
@@ -56,6 +60,11 @@ class Sale extends Model
     public function returns(): HasMany
     {
         return $this->hasMany(SaleReturn::class);
+    }
+
+    public function promotion(): BelongsTo
+    {
+        return $this->belongsTo(Promotion::class);
     }
 
     /**
