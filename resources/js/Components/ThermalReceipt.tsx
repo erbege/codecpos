@@ -95,8 +95,14 @@ export default function ThermalReceipt({ sale }: Props) {
                         </div>
                         {item.discount > 0 && (
                             <div className="flex justify-between text-[9px]">
-                                <span>(Diskon Item)</span>
+                                <span>(Diskon Manual Item)</span>
                                 <span>-{formatCurrency(item.discount)}</span>
+                            </div>
+                        )}
+                        {item.promo_discount > 0 && (
+                            <div className="flex justify-between text-[9px]">
+                                <span>(Diskon Promo Item)</span>
+                                <span>-{formatCurrency(item.promo_discount)}</span>
                             </div>
                         )}
                     </div>
@@ -113,8 +119,14 @@ export default function ThermalReceipt({ sale }: Props) {
                 </div>
                 {Number(sale.discount) > 0 && (
                     <div className="flex justify-between">
-                        <span>DISKON</span>
+                        <span>DISKON MANUAL</span>
                         <span>-{formatCurrency(sale.discount)}</span>
+                    </div>
+                )}
+                {Number(sale.promo_discount) > 0 && (
+                    <div className="flex justify-between">
+                        <span>DISKON PROMO {sale.promo_name ? `(${sale.promo_name})` : ''}</span>
+                        <span>-{formatCurrency(sale.promo_discount)}</span>
                     </div>
                 )}
                 
@@ -122,7 +134,7 @@ export default function ThermalReceipt({ sale }: Props) {
                 
                 <div className="flex justify-between text-[9px]">
                     <span>TOTAL DPP</span>
-                    <span>{formatCurrency(Number(sale.total) + Number(sale.discount) - Number(sale.tax))}</span>
+                    <span>{formatCurrency(Number(sale.total) - Number(sale.tax))}</span>
                 </div>
                 {Number(sale.tax) > 0 && (
                     <div className="flex justify-between text-[9px]">

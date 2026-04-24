@@ -152,6 +152,20 @@ export const printerService = {
         });
 
         ops.push({ type: "text", content: "--------------------------------\n" });
+        
+        const subtotalNumber = Number(sale.subtotal);
+        ops.push({ type: "text", content: `SUBTOTAL: Rp ${Math.round(subtotalNumber).toLocaleString('id-ID')}\n` });
+        
+        if (Number(sale.discount) > 0) {
+            ops.push({ type: "text", content: `DISKON MANUAL: -Rp ${Math.round(Number(sale.discount)).toLocaleString('id-ID')}\n` });
+        }
+        if (Number(sale.promo_discount) > 0) {
+            ops.push({ type: "text", content: `DISKON PROMO: -Rp ${Math.round(Number(sale.promo_discount)).toLocaleString('id-ID')}\n` });
+        }
+        if (Number(sale.tax) > 0) {
+            ops.push({ type: "text", content: `PAJAK (PPN): Rp ${Math.round(Number(sale.tax)).toLocaleString('id-ID')}\n` });
+        }
+
         ops.push({ type: "text_bold", content: true });
         ops.push({ type: "text", content: `TOTAL: Rp ${Math.round(Number(sale.total)).toLocaleString('id-ID')}\n` });
         ops.push({ type: "text_bold", content: false });

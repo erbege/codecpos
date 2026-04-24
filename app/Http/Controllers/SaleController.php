@@ -163,7 +163,8 @@ class SaleController extends Controller
 
             return redirect()->route('pos')->with([
                 'success' => "Transaksi berhasil!",
-                'last_sale_invoice' => $sale->invoice_number
+                'last_sale_invoice' => $sale->invoice_number,
+                'last_sale_data' => $sale
             ]);
         } catch (\Exception $e) {
             return back()->withErrors(['checkout' => $e->getMessage()]);

@@ -182,6 +182,14 @@ class PromotionService
     }
 
     /**
+     * Decrement the transaction usage counter for a promotion.
+     */
+    public function reverseUsage(int $promotionId): void
+    {
+        Promotion::where('id', $promotionId)->where('usage_count', '>', 0)->decrement('usage_count');
+    }
+
+    /**
      * Increment the qty_used counter on promotion_items (Tipe E).
      */
     public function recordItemQtyUsage(
@@ -203,6 +211,30 @@ class PromotionService
         }
 
         $query->increment('qty_used', $qtySold);
+    }
+
+    /**
+     * Decrement the qty_used counter on promotion_items (Tipe E).
+     */
+    public function reverseItemQtyUsage(
+        int  $promotionId,
+        int  $productId,
+        ?int $variantId,
+        int  $qtySold
+    ): void {
+        $query = PromotionItem::where('promotion_id', $promotionId)
+            ->where('product_id', $productId);
+
+        if ($variantId) {
+            $query->where(function ($q) use ($variantId) {
+                $q->where('product_variant_id', $variantId)
+                    ->orWhereNull('product_variant_id');
+            });
+        } else {
+            $query->whereNull('product_variant_id');
+        }
+
+        $query->where('qty_used', '>', 0)->decrement('qty_used', $qtySold);
     }
 
     /**

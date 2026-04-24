@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Models\OutletProductSetting;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\StockMovement;
@@ -27,22 +29,24 @@ class SaleService
             $invoiceNumber = $this->generateInvoiceNumber();
 
             // 2. Calculate totals
-            $subtotal = 0;
             $items = [];
-
             $outletId = $data['outlet_id'];
+            $grossSubtotal = 0;
 
             foreach ($data['items'] as $item) {
+                // Find product and variant (if any)
                 $product = Product::findOrFail($item['product_id']);
                 $variant = null;
 
                 if (!empty($item['product_variant_id'])) {
-                    $variant = \App\Models\ProductVariant::findOrFail($item['product_variant_id']);
+                    $variant = ProductVariant::where('product_id', $product->id)
+                        ->where('id', $item['product_variant_id'])
+                        ->first();
                 }
 
                 // Get outlet-specific setting
-                $setting = \App\Models\OutletProductSetting::where('outlet_id', $outletId)
-                    ->where('product_id', $item['product_id'])
+                $setting = OutletProductSetting::where('outlet_id', $outletId)
+                    ->where('product_id', $product->id)
                     ->where('product_variant_id', $item['product_variant_id'] ?? null)
                     ->lockForUpdate()
                     ->first();
@@ -60,8 +64,7 @@ class SaleService
                     throw new \Exception("Stok tidak cukup untuk produk: {$itemName}. Tersisa: {$currentStock}");
                 }
 
-                $itemDiscount = $item['discount'] ?? 0;
-                $itemSubtotal = ($itemPrice * $item['qty']) - $itemDiscount;
+                $grossSubtotal += ($itemPrice * $item['qty']);
 
                 $items[] = [
                     'product' => $product,
@@ -69,32 +72,72 @@ class SaleService
                     'product_name' => $itemName,
                     'qty' => $item['qty'],
                     'price' => $itemPrice,
-                    'discount' => $itemDiscount,
-                    'subtotal' => $itemSubtotal,
+                    'frontend_discount' => $item['discount'] ?? 0,
                 ];
-
-                $subtotal += $itemSubtotal;
             }
 
-            $discount = $data['discount'] ?? 0;
-            $tax = $data['tax'] ?? 0;
+            // ─── Promo: Calculate item promos and manual discounts ─────────
+            $totalManualDiscount = 0;
+            $totalItemPromoDiscount = 0;
+            $usedPromoIds = collect();
+
+            foreach ($items as &$item) {
+                $itemPromoResult = $this->promotionService->calculateItemPromoDiscount(
+                    $item['product']->id,
+                    $item['variant'] ? $item['variant']->id : null,
+                    $item['price'],
+                    $item['qty'],
+                    $grossSubtotal,
+                    $outletId
+                );
+
+                $itemPromoDiscount = $itemPromoResult['discount'];
+                $itemPromoId = $itemPromoResult['promotion_id'];
+
+                $finalManualDiscount = $item['frontend_discount'];
+                $finalPromoDiscount = 0;
+                $finalItemPromoId = null;
+
+                if ($itemPromoDiscount > $finalManualDiscount) {
+                    $finalPromoDiscount = $itemPromoDiscount;
+                    $finalManualDiscount = 0;
+                    $finalItemPromoId = $itemPromoId;
+                    if ($itemPromoId) $usedPromoIds->push($itemPromoId);
+                }
+
+                $item['final_manual_discount'] = $finalManualDiscount;
+                $item['final_promo_discount'] = $finalPromoDiscount;
+                $item['final_promo_id'] = $finalItemPromoId;
+                $item['final_subtotal'] = ($item['price'] * $item['qty']) - $finalManualDiscount - $finalPromoDiscount;
+
+                $totalManualDiscount += $finalManualDiscount;
+                $totalItemPromoDiscount += $finalPromoDiscount;
+            }
+            unset($item); // Fix: Unset reference to avoid side effects in subsequent loops
+
+            // Subtotal after item discounts
+            $subtotalAfterItems = $grossSubtotal - $totalManualDiscount - $totalItemPromoDiscount;
 
             // ─── Promo: Calculate global promo discount ────────────────────
-            $globalPromoResult = $this->promotionService->calculateGlobalPromoDiscount($subtotal, $outletId);
-            $promoDiscount = $globalPromoResult['discount'];
-            $promoPromotionId = $globalPromoResult['promotion_id'];
-            $promoName = $globalPromoResult['promo_name'];
+            $globalPromoResult = $this->promotionService->calculateGlobalPromoDiscount($subtotalAfterItems, $outletId);
+            $globalPromoDiscount = $globalPromoResult['discount'];
+            $globalPromoId = $globalPromoResult['promotion_id'];
+            $globalPromoName = $globalPromoResult['promo_name'];
+
+            if ($globalPromoId) $usedPromoIds->push($globalPromoId);
+
+            $tax = $data['tax'] ?? 0;
+            $totalPromoDiscount = $totalItemPromoDiscount + $globalPromoDiscount;
             
             // Get tax setting to determine if price was already inclusive
             $taxPerItem = filter_var(\App\Models\Setting::get('tax_per_item', 'false'), FILTER_VALIDATE_BOOLEAN);
             
             if ($taxPerItem) {
                 // If tax is per-item (Inclusive), subtotal already contains tax.
-                // Total is subtotal - (global) discount - promo discount.
-                $total = $subtotal - $discount - $promoDiscount;
+                $total = $grossSubtotal - $totalManualDiscount - $totalPromoDiscount;
             } else {
-                // If tax is exclusive, total is subtotal - discount - promo + tax.
-                $total = ($subtotal + $tax) - $discount - $promoDiscount;
+                // If tax is exclusive, total is subtotal - discounts + tax.
+                $total = ($grossSubtotal + $tax) - $totalManualDiscount - $totalPromoDiscount;
             }
             
             $paid = $data['paid'];
@@ -110,12 +153,12 @@ class SaleService
                 'user_id' => Auth::id(),
                 'outlet_id' => $outletId,
                 'customer_id' => $data['customer_id'] ?? null,
-                'subtotal' => $subtotal,
+                'subtotal' => $grossSubtotal,
                 'tax' => $tax,
-                'discount' => $discount,
-                'promo_discount' => $promoDiscount,
-                'promo_name' => $promoName,
-                'promotion_id' => $promoPromotionId,
+                'discount' => $totalManualDiscount,
+                'promo_discount' => $totalPromoDiscount,
+                'promo_name' => $globalPromoName,
+                'promotion_id' => $globalPromoId,
                 'total' => $total,
                 'paid' => $paid,
                 'change' => $change,
@@ -124,43 +167,8 @@ class SaleService
                 'notes' => $data['notes'] ?? null,
             ]);
 
-            // Track which promo IDs were used (for usage_count increment)
-            $usedPromoIds = collect();
-            if ($promoPromotionId) {
-                $usedPromoIds->push($promoPromotionId);
-            }
-
             // 4. Create sale items and update stock
             foreach ($items as $item) {
-                // ─── Promo: Calculate item promo discount ────────────────
-                $itemPromoResult = $this->promotionService->calculateItemPromoDiscount(
-                    $item['product']->id,
-                    $item['variant'] ? $item['variant']->id : null,
-                    $item['price'],
-                    $item['qty'],
-                    $subtotal,
-                    $outletId
-                );
-
-                $itemPromoDiscount = $itemPromoResult['discount'];
-                $itemPromoId = $itemPromoResult['promotion_id'];
-
-                // Option C: Use the larger discount (manual vs promo)
-                // If promo discount is bigger, use it; otherwise keep manual discount
-                $finalManualDiscount = $item['discount'];
-                $finalPromoDiscount = 0;
-                $finalItemPromoId = null;
-
-                if ($itemPromoDiscount > $finalManualDiscount) {
-                    // Promo wins — zero out manual, use promo
-                    $finalPromoDiscount = $itemPromoDiscount;
-                    $finalManualDiscount = 0;
-                    $finalItemPromoId = $itemPromoId;
-                }
-                // else: manual discount wins, promo is not applied
-
-                $finalSubtotal = ($item['price'] * $item['qty']) - $finalManualDiscount - $finalPromoDiscount;
-
                 SaleItem::create([
                     'sale_id' => $sale->id,
                     'product_id' => $item['product']->id,
@@ -168,25 +176,22 @@ class SaleService
                     'product_name' => $item['product_name'],
                     'qty' => $item['qty'],
                     'price' => $item['price'],
-                    'discount' => $finalManualDiscount,
-                    'promo_discount' => $finalPromoDiscount,
-                    'promotion_id' => $finalItemPromoId,
-                    'subtotal' => $finalSubtotal,
+                    'discount' => $item['final_manual_discount'],
+                    'promo_discount' => $item['final_promo_discount'],
+                    'promotion_id' => $item['final_promo_id'],
+                    'subtotal' => $item['final_subtotal'],
                 ]);
 
                 // Track item promo usage
-                if ($finalItemPromoId) {
-                    $usedPromoIds->push($finalItemPromoId);
-
+                if ($item['final_promo_id']) {
                     // Record qty usage for Tipe E
                     $this->promotionService->recordItemQtyUsage(
-                        $finalItemPromoId,
+                        $item['final_promo_id'],
                         $item['product']->id,
                         $item['variant'] ? $item['variant']->id : null,
                         $item['qty']
                     );
                 }
-
                 // Decrease stock in outlet settings
                 \App\Models\OutletProductSetting::where('outlet_id', $outletId)
                     ->where('product_id', $item['product']->id)
@@ -209,6 +214,7 @@ class SaleService
                 // PHASE 2 OPTIMIZATION: Invalidate product cache for this outlet
                 $this->productService->invalidateProductCache($item['product']->id, $outletId);
             }
+            unset($item);
 
             // ─── Promo: Record usage count for all used promos ─────────
             foreach ($usedPromoIds->unique() as $promoId) {
@@ -252,7 +258,24 @@ class SaleService
             }
 
             // Restore stock to the outlet
+            $reversedPromoIds = collect();
+
+            if ($sale->promotion_id) {
+                $reversedPromoIds->push($sale->promotion_id);
+            }
+
             foreach ($sale->items as $item) {
+                // Reverse item promo usage
+                if ($item->promotion_id) {
+                    $reversedPromoIds->push($item->promotion_id);
+                    $this->promotionService->reverseItemQtyUsage(
+                        $item->promotion_id,
+                        $item->product_id,
+                        $item->product_variant_id,
+                        $item->qty
+                    );
+                }
+
                 \App\Models\OutletProductSetting::where('outlet_id', $sale->outlet_id)
                     ->where('product_id', $item->product_id)
                     ->where('product_variant_id', $item->product_variant_id)
@@ -272,6 +295,11 @@ class SaleService
 
                 // PHASE 2 OPTIMIZATION: Invalidate product cache for this outlet
                 $this->productService->invalidateProductCache($item->product_id, $sale->outlet_id);
+            }
+
+            // Reverse usage counts for unique promos
+            foreach ($reversedPromoIds->unique() as $promoId) {
+                $this->promotionService->reverseUsage($promoId);
             }
 
             $sale->update(['status' => 'voided']);

@@ -44,7 +44,15 @@ class StorePromotionRequest extends FormRequest
 
         // For update, allow same code
         if ($this->isMethod('PUT') || $this->isMethod('PATCH')) {
-            $rules['code'] = ['nullable', 'string', 'max:50', 'unique:promotions,code,' . $this->route('promotion')];
+            $promotion = $this->route('promotion');
+            $promotionId = is_object($promotion) ? $promotion->id : $promotion;
+            
+            $rules['code'] = [
+                'nullable', 
+                'string', 
+                'max:50', 
+                \Illuminate\Validation\Rule::unique('promotions', 'code')->ignore($promotionId)
+            ];
         }
 
         // Percentage cannot exceed 100

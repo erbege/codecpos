@@ -36,7 +36,7 @@ class ReportController extends Controller
         $salesSummary = Sale::where('status', 'completed')
             ->when($outletId, fn($q) => $q->where('outlet_id', $outletId))
             ->whereBetween('created_at', [$dateFrom, $dateTo . ' 23:59:59'])
-            ->selectRaw('COUNT(*) as total_orders, SUM(total) as gross_sales, SUM(discount) as total_discount, SUM(tax) as total_tax')
+            ->selectRaw('COUNT(*) as total_orders, SUM(total) as gross_sales, SUM(discount + COALESCE(promo_discount, 0)) as total_discount, SUM(tax) as total_tax')
             ->first();
 
         // Stock Summary
@@ -273,7 +273,7 @@ class ReportController extends Controller
                 COUNT(*) as total_transactions,
                 SUM(CASE WHEN status = "completed" THEN total ELSE 0 END) as net_sales,
                 SUM(tax) as total_tax,
-                SUM(discount) as total_discount,
+                SUM(discount + COALESCE(promo_discount, 0)) as total_discount,
                 SUM(CASE WHEN status = "void" THEN 1 ELSE 0 END) as void_count,
                 AVG(CASE WHEN status = "completed" THEN total ELSE NULL END) as avg_transaction_value
             ')
@@ -293,7 +293,7 @@ class ReportController extends Controller
                 DATE(created_at) as date, 
                 COUNT(*) as transactions, 
                 SUM(tax) as tax, 
-                SUM(discount) as discount,
+                SUM(discount + COALESCE(promo_discount, 0)) as discount,
                 SUM(CASE WHEN status = "completed" THEN total ELSE 0 END) as sales
             ')
             ->groupBy('date')

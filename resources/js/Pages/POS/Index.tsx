@@ -186,6 +186,58 @@ export default function POS() {
     }, []);
 
 
+    // ─── Promo Helpers ─────────────────────────────────────────────────
+    const getProductPromo = (productId: number, variantId: number | null) => {
+        if (!activePromotions?.product) return null;
+        for (const promo of activePromotions.product) {
+            const match = promo.items.find(i =>
+                i.product_id === productId &&
+                (i.product_variant_id === variantId || i.product_variant_id === null)
+            );
+            if (match) {
+                if (match.remaining_qty !== null && match.remaining_qty <= 0) continue;
+                return { ...promo, matchedItem: match };
+            }
+        }
+        return null;
+    };
+
+    const getPromoLabel = (promo: any) => {
+        if (promo.discount_type === 'percentage') return `-${promo.discount_value}%`;
+        return `-${formatCurrency(promo.discount_value)}`;
+    };
+
+    const calcPromoPrice = (price: number, promo: any) => {
+        if (promo.discount_type === 'percentage') {
+            let disc = (price * promo.discount_value) / 100;
+            if (promo.max_discount && disc > promo.max_discount) disc = promo.max_discount;
+            return Math.max(0, price - disc);
+        }
+        return Math.max(0, price - promo.discount_value);
+    };
+
+    const bestGlobalPromo = useMemo(() => {
+        if (!activePromotions?.global?.length) return null;
+        const sub = cart.getSubtotal();
+        let best: any = null;
+        let bestDisc = 0;
+        for (const promo of activePromotions.global) {
+            if (promo.min_purchase && sub < promo.min_purchase) continue;
+            let disc = promo.discount_type === 'percentage'
+                ? Math.min((sub * promo.discount_value) / 100, promo.max_discount || Infinity)
+                : promo.discount_value;
+            disc = Math.min(disc, sub);
+            if (disc > bestDisc) { bestDisc = disc; best = { ...promo, calculatedDiscount: disc }; }
+        }
+        return best;
+    }, [activePromotions?.global, cart.items]);
+
+    const nearestGlobalPromo = useMemo(() => {
+        if (!activePromotions?.global?.length || bestGlobalPromo) return null;
+        const sub = cart.getSubtotal();
+        return activePromotions.global.find(p => p.min_purchase && sub < p.min_purchase) || null;
+    }, [activePromotions?.global, cart.items, bestGlobalPromo]);
+
     const handleApplyItemDiscount = (productId: number | string) => {
         const item = cart.items.find(i => i.product.id === productId);
         if (!item) return;
@@ -208,23 +260,65 @@ export default function POS() {
         setDiscountValue('');
     };
 
-    const subtotal = cart.getSubtotal();
+    // ─── Promo & Totals Calculation ───────────────────────────────────
+    const itemLevelPromoDiscount = useMemo(() => {
+        let totalPromo = 0;
+        cart.items.forEach(item => {
+            const p = item.product as any;
+            const pid = typeof p.id === 'string' && p.id.startsWith('v_') ? p.real_product_id : p.id;
+            const vid = p.is_variant ? p.variant_id : null;
+            const promo = getProductPromo(pid as number, vid);
+            
+            if (promo) {
+                // Check min purchase for product promo if exists
+                if (promo.min_purchase && cart.getSubtotal() < promo.min_purchase) return;
+                
+                let promoNominal = 0;
+                const basePrice = Number(item.product.price);
+                const qty = item.qty;
+                const targetQty = promo.matchedItem.max_qty ? Math.min(qty, promo.matchedItem.max_qty) : qty;
+
+                if (promo.discount_type === 'percentage') {
+                    promoNominal = (basePrice * targetQty * promo.discount_value) / 100;
+                    if (promo.max_discount && promoNominal > promo.max_discount) promoNominal = promo.max_discount;
+                } else {
+                    promoNominal = promo.discount_value * targetQty;
+                }
+
+                // Non-stackable: Only use promo if better than manual discount
+                if (promoNominal > item.discount) {
+                    totalPromo += (promoNominal - item.discount);
+                }
+            }
+        });
+        return totalPromo;
+    }, [cart.items, activePromotions, cart.getSubtotal()]);
+
+    const subtotalBeforeGlobal = cart.getSubtotal() - itemLevelPromoDiscount;
+
+    const autoGlobalDiscount = useMemo(() => {
+        if (!bestGlobalPromo) return 0;
+        return bestGlobalPromo.calculatedDiscount;
+    }, [bestGlobalPromo]);
+
     const totalGlobalDiscount = globalDiscountMode === 'percent' 
-        ? (subtotal * Number(globalDiscount)) / 100 
+        ? (subtotalBeforeGlobal * Number(globalDiscount)) / 100 
         : Number(globalDiscount);
     
-    // Logic for tax display and total calculation
-    // If taxPerItem is ON, price is INCLUSIVE of tax.
-    // If taxPerItem is OFF, price is EXCLUSIVE of tax.
+    // Final discounts to apply
+    const finalGlobalDiscount = Math.max(autoGlobalDiscount, totalGlobalDiscount);
+    
+    // Tax Calculation
     const taxAmount = taxPerItem 
-        ? (subtotal * taxRate) / (100 + taxRate) 
-        : (subtotal * taxRate) / 100;
+        ? (subtotalBeforeGlobal * taxRate) / (100 + taxRate) 
+        : (subtotalBeforeGlobal * taxRate) / 100;
 
     const total = taxPerItem
-        ? Math.max(0, subtotal - totalGlobalDiscount)
-        : Math.max(0, (subtotal + taxAmount) - totalGlobalDiscount);
+        ? Math.max(0, subtotalBeforeGlobal - finalGlobalDiscount)
+        : Math.max(0, (subtotalBeforeGlobal + taxAmount) - finalGlobalDiscount);
 
-    const displaySubtotal = taxPerItem ? subtotal - taxAmount : subtotal;
+    const subtotal = cart.getSubtotal(); // For reference in UI
+    const displaySubtotal = taxPerItem ? subtotalBeforeGlobal - taxAmount : subtotalBeforeGlobal;
     const change = Number(paidAmount) - total;
 
     // Keyboard shortcut
@@ -353,56 +447,7 @@ export default function POS() {
         return flat;
     }, [products]);
 
-    // ─── Promo Helpers ─────────────────────────────────────────────────
-    const getProductPromo = (productId: number, variantId: number | null) => {
-        if (!activePromotions?.product) return null;
-        for (const promo of activePromotions.product) {
-            const match = promo.items.find(i =>
-                i.product_id === productId &&
-                (i.product_variant_id === variantId || i.product_variant_id === null)
-            );
-            if (match) {
-                if (match.remaining_qty !== null && match.remaining_qty <= 0) continue;
-                return { ...promo, matchedItem: match };
-            }
-        }
-        return null;
-    };
 
-    const getPromoLabel = (promo: any) => {
-        if (promo.discount_type === 'percentage') return `-${promo.discount_value}%`;
-        return `-${formatCurrency(promo.discount_value)}`;
-    };
-
-    const calcPromoPrice = (price: number, promo: any) => {
-        if (promo.discount_type === 'percentage') {
-            let disc = (price * promo.discount_value) / 100;
-            if (promo.max_discount && disc > promo.max_discount) disc = promo.max_discount;
-            return Math.max(0, price - disc);
-        }
-        return Math.max(0, price - promo.discount_value);
-    };
-
-    const bestGlobalPromo = useMemo(() => {
-        if (!activePromotions?.global?.length) return null;
-        const sub = subtotal;
-        let best: any = null;
-        let bestDisc = 0;
-        for (const promo of activePromotions.global) {
-            if (promo.min_purchase && sub < promo.min_purchase) continue;
-            let disc = promo.discount_type === 'percentage'
-                ? Math.min((sub * promo.discount_value) / 100, promo.max_discount || Infinity)
-                : promo.discount_value;
-            disc = Math.min(disc, sub);
-            if (disc > bestDisc) { bestDisc = disc; best = { ...promo, calculatedDiscount: disc }; }
-        }
-        return best;
-    }, [activePromotions?.global, subtotal]);
-
-    const nearestGlobalPromo = useMemo(() => {
-        if (!activePromotions?.global?.length || bestGlobalPromo) return null;
-        return activePromotions.global.find(p => p.min_purchase && subtotal < p.min_purchase) || null;
-    }, [activePromotions?.global, subtotal, bestGlobalPromo]);
 
     const filteredProducts = flattenedProducts.filter((p) => {
         const matchSearch = !search || 
@@ -462,6 +507,9 @@ export default function POS() {
                 });
             }
         }
+        if (e.key === 'Escape') {
+            setSearch('');
+        }
     };
 
     // Moving calculations up to fix TS error
@@ -506,32 +554,37 @@ export default function POS() {
             onSuccess: (page) => {
                 const flashProps = page.props.flash as any;
                 
-                const lastItems = [...cart.items];
-                
-                const customerObj = customers.find(c => c.id === Number(selectedCustomer));
-                
-                setCompletedSale({
-                    invoice_number: flashProps.last_sale_invoice || 'INV-TEMP', 
-                    customer: customerObj,
-                    items: lastItems.map(i => ({
-                        product_name: i.product?.name || 'Produk',
-                        price: Number(i.product?.price || 0),
-                        qty: Number(i.qty || 0),
-                        subtotal: Number(i.product?.price || 0) * Number(i.qty || 0) - Number(i.discount || 0),
-                        discount: Number(i.discount || 0)
-                    })),
-                    subtotal: Number(subtotal),
-                    discount: Number(totalGlobalDiscount),
-                    tax: Number(taxAmount),
-                    total: Number(total),
-                    paid: Number(paidAmount || 0),
-                    change: Number(change || 0),
-                    payment_method: paymentMethod,
-                    created_at: new Date().toISOString(),
-                    outlet: (auth as any)?.user?.outlet || null
-                });
+                if (flashProps.last_sale_data) {
+                    setCompletedSale(flashProps.last_sale_data);
+                } else {
+                    const lastItems = [...cart.items];
+                    const customerObj = customers.find(c => c.id === Number(selectedCustomer));
+                    
+                    setCompletedSale({
+                        invoice_number: flashProps.last_sale_invoice || 'INV-TEMP', 
+                        customer: customerObj,
+                        items: lastItems.map(i => ({
+                            product_name: i.product?.name || 'Produk',
+                            price: Number(i.product?.price || 0),
+                            qty: Number(i.qty || 0),
+                            subtotal: Number(i.product?.price || 0) * Number(i.qty || 0) - Number(i.discount || 0),
+                            discount: Number(i.discount || 0)
+                        })),
+                        subtotal: Number(subtotal),
+                        discount: Number(totalGlobalDiscount),
+                        tax: Number(taxAmount),
+                        total: Number(total),
+                        paid: Number(paidAmount || 0),
+                        change: Number(change || 0),
+                        payment_method: paymentMethod,
+                        created_at: new Date().toISOString(),
+                        outlet: (auth as any)?.user?.outlet || null
+                    });
+                }
 
                 cart.clearCart();
+                setSearch('');
+                setSelectedCategory(null);
                 setShowCheckout(false);
                 setPaidAmount('');
                 setNotes('');
@@ -566,8 +619,17 @@ export default function POS() {
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     onKeyDown={handleSearchKeyDown}
-                                    className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-200 text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                                    className="w-full pl-9 pr-10 py-2.5 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-200 text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                                 />
+                                {search && (
+                                    <button
+                                        onClick={() => setSearch('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-all"
+                                        title="Clear search (Esc)"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
                             </div>
                             
                             {/* Outlet Selector for Admins/Owners */}
@@ -666,6 +728,9 @@ export default function POS() {
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-2.5">
                                 {filteredProducts.map((product) => {
                                     const inCart = cart.items.find((i) => i.product.id === product.id);
+                                    const pid = typeof product.id === 'string' && product.id.startsWith('v_') ? product.real_product_id : product.id;
+                                    const vid = product.is_variant ? product.variant_id : null;
+                                    const promo = getProductPromo(pid as number, vid);
                                     return (
                                         <button
                                             key={product.id}
@@ -683,6 +748,14 @@ export default function POS() {
                                                     {inCart.qty}
                                                 </div>
                                             )}
+                                            {promo && (
+                                                <div className="absolute -bottom-1 -right-1 bg-white dark:bg-gray-900 shadow-sm border border-rose-100 dark:border-rose-900/30 rounded-tl-lg rounded-br-lg px-2 py-0.5 z-10 flex items-center gap-1">
+                                                    <Tag className="w-2.5 h-2.5 text-rose-500" />
+                                                    <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400">
+                                                        {promo.name} {getPromoLabel(promo)}
+                                                    </span>
+                                                </div>
+                                            )}
                                             <div className={`w-full aspect-square rounded-xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center mb-3 group-hover:scale-105 transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm group-hover:shadow-md ${inCart ? 'border-transparent' : 'group-hover:border-indigo-200 dark:group-hover:border-indigo-500/50'}`}>
                                                 {product.image ? (
                                                     <img src={`/storage/${product.image}`} className="w-full h-full object-cover" alt="" loading="lazy" />
@@ -693,9 +766,6 @@ export default function POS() {
                                             <p className="text-sm font-semibold text-gray-900 dark:text-white truncate leading-tight tracking-tight">{product.name}</p>
                                             <div className="flex flex-col mt-1.5">
                                                 {(() => {
-                                                    const pid = product.is_variant ? product.real_product_id : product.id;
-                                                    const vid = product.is_variant ? product.variant_id : null;
-                                                    const promo = getProductPromo(pid, vid);
                                                     if (promo) {
                                                         const promoPrice = calcPromoPrice(Number(product.price), promo);
                                                         return (
@@ -789,7 +859,16 @@ export default function POS() {
 
                     <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-2">
                         {cart.items.length > 0 ? (
-                            cart.items.map((item, idx) => (
+                            cart.items.map((item, idx) => {
+                                const p = item.product as any;
+                                const pid = typeof p.id === 'string' && p.id.startsWith('v_') ? p.real_product_id : p.id;
+                                const vid = p.is_variant ? p.variant_id : null;
+                                const promo = getProductPromo(pid as number, vid);
+                                const promoDiscountNominal = promo && (!promo.min_purchase || subtotal >= promo.min_purchase) 
+                                    ? (Number(item.product.price) - calcPromoPrice(Number(item.product.price), promo)) * item.qty 
+                                    : 0;
+
+                                return (
                                 <div 
                                     key={item.product.id} 
                                     onClick={() => cart.setSelectedIndex(idx)}
@@ -809,7 +888,7 @@ export default function POS() {
                                         <button onClick={() => cart.removeItem(item.product.id)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                                     </div>
                                     
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex items-center justify-between mt-2">
                                         <div className="flex items-center gap-1">
                                             <button onClick={() => cart.updateQuantity(item.product.id, item.qty - 1)} className="w-5 h-5 rounded bg-white dark:bg-gray-900 border dark:border-gray-800 flex items-center justify-center text-gray-500"><Minus className="w-2.5 h-2.5" /></button>
                                             <NumericInput 
@@ -821,21 +900,30 @@ export default function POS() {
                                         </div>
                                         
                                         <div className="flex flex-col items-end">
-                                            {item.discount > 0 && <span className="text-[10px] text-red-500 font-semibold">-{formatCurrency(item.discount)}</span>}
-                                            {(() => {
-                                                const p = item.product as any;
-                                                const pid = typeof p.id === 'string' && p.id.startsWith('v_') ? p.real_product_id : p.id;
-                                                const vid = p.is_variant ? p.variant_id : null;
-                                                const promo = getProductPromo(pid as number, vid);
-                                                if (promo && (!promo.min_purchase || subtotal >= promo.min_purchase)) {
-                                                    return <span className="text-[9px] text-rose-500 font-bold flex items-center gap-0.5"><Tag className="w-2.5 h-2.5" />{promo.name}</span>;
-                                                }
-                                                if (promo && promo.min_purchase && subtotal < promo.min_purchase) {
-                                                    return <span className="text-[9px] text-amber-500">Min. {formatCurrency(promo.min_purchase)}</span>;
-                                                }
-                                                return null;
-                                            })()}
-                                            <p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(item.product.price * item.qty - item.discount)}</p>
+                                            {promo && (
+                                                <span className="text-[9px] text-rose-500 font-bold flex items-center gap-0.5 uppercase mb-0.5 tracking-tight"><Tag className="w-2.5 h-2.5" />{promo.name}</span>
+                                            )}
+                                            {item.discount > 0 ? (
+                                                <div className="flex flex-col items-end">
+                                                    <span className="text-[10px] text-gray-400 line-through">
+                                                        {formatCurrency(Number(item.product.price) * item.qty)}
+                                                    </span>
+                                                    <span className="text-sm font-black text-gray-900 dark:text-white leading-none mt-0.5">
+                                                        {formatCurrency((Number(item.product.price) * item.qty) - item.discount)}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-end">
+                                                    {promoDiscountNominal > 0 && (
+                                                        <span className="text-[10px] text-rose-400 line-through">
+                                                            {formatCurrency(Number(item.product.price) * item.qty)}
+                                                        </span>
+                                                    )}
+                                                    <span className="text-sm font-black text-gray-900 dark:text-white leading-none mt-0.5">
+                                                        {formatCurrency((Number(item.product.price) * item.qty) - promoDiscountNominal)}
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -883,7 +971,7 @@ export default function POS() {
                                         )}
                                     </div>
                                 </div>
-                            ))
+                            )})
                         ) : (
                             <div className="h-full flex flex-col items-center justify-center text-gray-400 py-16">
                                 <ShoppingCart className="w-12 h-12 mb-3 opacity-20" />
@@ -902,6 +990,14 @@ export default function POS() {
                                 <div className="flex justify-between text-xs font-semibold text-gray-500 uppercase">
                                     <span>PPN ({taxRate}%)</span>
                                     <span>{formatCurrency(taxAmount)}</span>
+                                </div>
+                            )}
+                            
+                            {/* Promo Discount Summary */}
+                            {(itemLevelPromoDiscount > 0 || finalGlobalDiscount > 0) && (
+                                <div className="flex justify-between items-center text-[10px] pb-1 border-b border-dashed border-gray-200 dark:border-gray-800 mb-2">
+                                    <span className="font-bold text-rose-500 uppercase tracking-widest">Diskon Promo</span>
+                                    <span className="font-black text-rose-600 dark:text-rose-400">- {formatCurrency(itemLevelPromoDiscount + finalGlobalDiscount)}</span>
                                 </div>
                             )}
                             {/* Global Promo Banner */}
@@ -978,10 +1074,10 @@ export default function POS() {
                                         <span>Subtotal (DPP)</span>
                                         <span className="text-white text-xs">{formatCurrency(Number(displaySubtotal))}</span>
                                     </div>
-                                    {Number(totalGlobalDiscount) > 0 && (
+                                    {(Number(totalGlobalDiscount) > 0 || itemLevelPromoDiscount > 0) && (
                                         <div className="flex justify-between gap-6 text-[11px] text-red-400 font-semibold uppercase tracking-wider">
-                                            <span>Diskon</span>
-                                            <span className="text-red-300 text-xs">-{formatCurrency(Number(totalGlobalDiscount))}</span>
+                                            <span>Diskon Promo</span>
+                                            <span className="text-red-300 text-xs">-{formatCurrency(Number(totalGlobalDiscount) + itemLevelPromoDiscount)}</span>
                                         </div>
                                     )}
                                     {Number(taxAmount) > 0 && (
@@ -1056,7 +1152,7 @@ export default function POS() {
                                     </button>
                                 ))}
                             </div>
-                        </section>                        <div className="grid grid-cols-2 gap-3 bg-white dark:bg-slate-900/40 p-3 rounded-2xl border border-slate-200 dark:border-slate-800">
+                        </section>                        <div className="grid grid-cols-2 gap-3 bg-white dark:bg-slate-900/40 p-3 rounded-2xl border border-slate-200 dark:border-slate-800">
                             <section>
                                 <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Pelanggan</label>
                                 <div className="flex gap-1.5">

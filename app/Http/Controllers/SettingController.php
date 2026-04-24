@@ -84,6 +84,24 @@ class SettingController extends Controller
             'pos_print_proxy_url' => 'nullable|string',
         ]);
 
+        // Check if there are any open shifts
+        $hasOpenShifts = \App\Models\Shift::where('status', 'open')->exists();
+
+        if ($hasOpenShifts) {
+            $oldTaxPerItem = filter_var(Setting::get('tax_per_item', 'false'), FILTER_VALIDATE_BOOLEAN);
+            $newTaxPerItem = !empty($validated['tax_per_item']);
+
+            $oldTaxEnabled = filter_var(Setting::get('tax_enabled', 'false'), FILTER_VALIDATE_BOOLEAN);
+            $newTaxEnabled = !empty($validated['tax_enabled']);
+
+            $oldTaxPercentage = (float) Setting::get('tax_percentage', 0);
+            $newTaxPercentage = isset($validated['tax_percentage']) ? (float) $validated['tax_percentage'] : 0.0;
+
+            if ($oldTaxPerItem !== $newTaxPerItem || $oldTaxEnabled !== $newTaxEnabled || $oldTaxPercentage !== $newTaxPercentage) {
+                return back()->withErrors(['settings' => 'Pengaturan pajak (Metode, Status, Persentase) tidak dapat diubah selama masih ada shift kasir yang terbuka. Silakan tutup semua shift terlebih dahulu.']);
+            }
+        }
+
         Setting::set('tax_enabled', !empty($validated['tax_enabled']) ? 'true' : 'false');
         Setting::set('tax_percentage', $validated['tax_percentage'] ?? 0);
         Setting::set('shop_name', $validated['shop_name']);

@@ -33,11 +33,14 @@ class Category extends Model
      */
     public static function getAllCached()
     {
-        return Cache::remember('categories_all', 3600, function () {
+        $cached = Cache::remember('categories_all_v2', 3600, function () {
             return static::where('is_active', true)
                 ->orderBy('name')
-                ->get();
+                ->get()
+                ->toArray();
         });
+
+        return static::hydrate($cached);
     }
 
     /**

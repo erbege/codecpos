@@ -54,6 +54,7 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
                 'last_sale_invoice' => fn () => $request->session()->get('last_sale_invoice'),
+                'last_sale_data' => fn () => $request->session()->get('last_sale_data'),
             ],
         ];
     }

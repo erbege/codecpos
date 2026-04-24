@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Category;
+use App\Models\OutletProductSetting;
 use App\Jobs\OptimizeProductImage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\UploadedFile;
@@ -320,32 +322,67 @@ class ProductService
             $outletId = \Illuminate\Support\Facades\Auth::user()->outlet_id;
         }
 
-        $cacheKey = "products_outlet_{$outletId}_variants_{$withVariants}";
+        // Use v3 to force fresh cache and avoid "incomplete object" issues from previous versions
+        $cacheKey = "products_outlet_{$outletId}_variants_{$withVariants}_v3";
 
-        return Cache::remember($cacheKey, 3600, function () use ($outletId, $withVariants) {
+        $cachedData = Cache::remember($cacheKey, 3600, function () use ($outletId, $withVariants) {
             $query = Product::with([
                 'category',
                 'outletSettings' => function ($q) use ($outletId) {
-                    if ($outletId) {
-                        $q->where('outlet_id', $outletId);
-                    }
-                    $q->whereNull('product_variant_id');
+                    $q->where('outlet_id', $outletId)->whereNull('product_variant_id');
                 }
             ]);
 
             if ($withVariants) {
                 $query->with([
-                    'variants' => function ($q) use ($outletId) {
-                        if ($outletId) {
-                            $q->with(['outletSettings' => function ($sq) use ($outletId) {
-                                $sq->where('outlet_id', $outletId);
-                            }]);
-                        }
+                    'variants.outletSettings' => function ($q) use ($outletId) {
+                        $q->where('outlet_id', $outletId);
                     }
                 ]);
             }
 
-            return $query->where('is_active', true)->get();
+            // Caching as plain array is safer across code changes
+            return $query->where('is_active', true)->get()->toArray();
+        });
+
+        // Hydrate models and reconstruct relations from array data
+        return Product::hydrate($cachedData)->each(function ($product, $index) use ($cachedData) {
+            $item = $cachedData[$index];
+            
+            // Explicitly remove nested data from attributes to prevent shadowing relations
+            $product->offsetUnset('category');
+            $product->offsetUnset('variants');
+            $product->offsetUnset('outlet_settings');
+            $product->offsetUnset('outletSettings');
+            
+            // Hydrate category
+            if (!empty($item['category'])) {
+                $product->setRelation('category', (new Category())->newFromBuilder($item['category']));
+            }
+            
+            // Hydrate outletSettings (toArray uses snake_case keys)
+            if (!empty($item['outlet_settings'])) {
+                $product->setRelation('outletSettings', OutletProductSetting::hydrate($item['outlet_settings']));
+            }
+
+            // Hydrate variants
+            if (!empty($item['variants'])) {
+                $variantsData = $item['variants'];
+                $variants = ProductVariant::hydrate($variantsData);
+                
+                // Hydrate each variant's outletSettings
+                $variants->each(function ($variant, $vIndex) use ($variantsData) {
+                    $vItem = $variantsData[$vIndex];
+                    $variant->offsetUnset('outlet_settings');
+                    $variant->offsetUnset('outletSettings');
+                    
+                    if (!empty($vItem['outlet_settings'])) {
+                        $variant->setRelation('outletSettings', OutletProductSetting::hydrate($vItem['outlet_settings']));
+                    }
+                });
+                
+                $product->setRelation('variants', $variants);
+            }
         });
     }
 
