@@ -218,7 +218,7 @@ export default function Comparison() {
                                     onClick={() => setActiveTab('a')}
                                     className={`p-6 rounded-3xl border-2 transition-all text-left group ${activeTab === 'a' ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'bg-white dark:bg-gray-900 border-transparent hover:border-indigo-500/30'}`}
                                 >
-                                    <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-1 ${activeTab === 'a' ? 'text-indigo-200' : 'text-indigo-500'}`}>Hanya di {outletA?.name || 'A'}</p>
+                                    <p className={`text-xs font-black uppercase tracking-[0.2em] mb-1 ${activeTab === 'a' ? 'text-indigo-200' : 'text-indigo-500'}`}>Hanya di {outletA?.name || 'A'}</p>
                                     <div className="flex items-center justify-between">
                                         <h4 className="text-3xl font-black">{countA}</h4>
                                         <Package className={`w-8 h-8 opacity-20 group-hover:scale-110 transition-transform ${activeTab === 'a' ? 'text-white' : 'text-indigo-500'}`} />
@@ -229,7 +229,7 @@ export default function Comparison() {
                                     onClick={() => setActiveTab('b')}
                                     className={`p-6 rounded-3xl border-2 transition-all text-left group ${activeTab === 'b' ? 'bg-violet-600 border-violet-600 text-white shadow-xl shadow-violet-500/20' : 'bg-white dark:bg-gray-900 border-transparent hover:border-violet-500/30'}`}
                                 >
-                                    <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-1 ${activeTab === 'b' ? 'text-violet-200' : 'text-violet-500'}`}>Hanya di {outletB?.name || 'B'}</p>
+                                    <p className={`text-xs font-black uppercase tracking-[0.2em] mb-1 ${activeTab === 'b' ? 'text-violet-200' : 'text-violet-500'}`}>Hanya di {outletB?.name || 'B'}</p>
                                     <div className="flex items-center justify-between">
                                         <h4 className="text-3xl font-black">{countB}</h4>
                                         <Package className={`w-8 h-8 opacity-20 group-hover:scale-110 transition-transform ${activeTab === 'b' ? 'text-white' : 'text-violet-500'}`} />
@@ -240,7 +240,7 @@ export default function Comparison() {
                                     onClick={() => setActiveTab('diff')}
                                     className={`p-6 rounded-3xl border-2 transition-all text-left group ${activeTab === 'diff' ? 'bg-emerald-600 border-emerald-600 text-white shadow-xl shadow-emerald-500/20' : 'bg-white dark:bg-gray-900 border-transparent hover:border-emerald-500/30'}`}
                                 >
-                                    <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-1 ${activeTab === 'diff' ? 'text-emerald-200' : 'text-emerald-500'}`}>Perbedaan Data</p>
+                                    <p className={`text-xs font-black uppercase tracking-[0.2em] mb-1 ${activeTab === 'diff' ? 'text-emerald-200' : 'text-emerald-500'}`}>Perbedaan Data</p>
                                     <div className="flex items-center justify-between">
                                         <h4 className="text-3xl font-black">{countDiff}</h4>
                                         <AlertTriangle className={`w-8 h-8 opacity-20 group-hover:scale-110 transition-transform ${activeTab === 'diff' ? 'text-white' : 'text-emerald-500'}`} />
@@ -266,18 +266,18 @@ export default function Comparison() {
                                     <table className="w-full text-left">
                                         <thead>
                                             <tr className="border-b border-gray-50 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-                                                <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Sku & Identitas Produk</th>
+                                                <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Sku & Identitas Produk</th>
                                                 {activeTab === 'diff' ? (
                                                     <>
-                                                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">{outletA?.name}</th>
-                                                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">{outletB?.name}</th>
-                                                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Status Selisih</th>
+                                                        <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-[0.2em] text-center">{outletA?.name}</th>
+                                                        <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-[0.2em] text-center">{outletB?.name}</th>
+                                                        <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-[0.2em] text-center">Status Selisih</th>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-right">Stok</th>
-                                                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-right">Harga Jual</th>
-                                                        <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Tersedia Di</th>
+                                                        <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-[0.2em] text-right">Stok</th>
+                                                        <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-[0.2em] text-right">Harga Jual</th>
+                                                        <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-[0.2em] text-center">Tersedia Di</th>
                                                     </>
                                                 )}
                                             </tr>
@@ -287,7 +287,7 @@ export default function Comparison() {
                                                 <tr key={idx} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
                                                     <td className="px-8 py-5">
                                                         <div className="space-y-0.5">
-                                                            <span className="text-[10px] font-black text-indigo-500 dark:text-indigo-400 tracking-tighter uppercase">{item.sku}</span>
+                                                            <span className="text-xs font-black text-indigo-500 dark:text-indigo-400 tracking-tighter uppercase">{item.sku}</span>
                                                             <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">{item.name}</p>
                                                         </div>
                                                     </td>
@@ -305,8 +305,8 @@ export default function Comparison() {
                                                     </td>
                                                     <td className="px-8 py-5 text-center">
                                                         <div className="flex flex-col items-center gap-2">
-                                                            {item.diff_price && <span className="text-[9px] font-black text-rose-500 uppercase px-2 py-0.5 border border-rose-100 rounded-full">Beda Harga</span>}
-                                                            {item.diff_stock && <span className="text-[9px] font-black text-amber-500 uppercase px-2 py-0.5 border border-amber-100 rounded-full">Selisih Stok</span>}
+                                                            {item.diff_price && <span className="text-xs font-black text-rose-500 uppercase px-2 py-0.5 border border-rose-100 rounded-full">Beda Harga</span>}
+                                                            {item.diff_stock && <span className="text-xs font-black text-amber-500 uppercase px-2 py-0.5 border border-amber-100 rounded-full">Selisih Stok</span>}
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -315,14 +315,14 @@ export default function Comparison() {
                                                 <tr key={idx} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
                                                     <td className="px-8 py-5">
                                                         <div className="space-y-0.5">
-                                                            <span className="text-[10px] font-black text-indigo-500 tracking-tighter uppercase">{item.sku}</span>
+                                                            <span className="text-xs font-black text-indigo-500 tracking-tighter uppercase">{item.sku}</span>
                                                             <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">{item.name}</p>
                                                         </div>
                                                     </td>
                                                     <td className="px-8 py-5 text-right font-black text-gray-700 dark:text-gray-300">{item.stock}</td>
                                                     <td className="px-8 py-5 text-right font-black text-indigo-600">{formatCurrency(item.price)}</td>
                                                     <td className="px-8 py-5 text-center px-4">
-                                                        <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase ${activeTab === 'a' ? 'bg-indigo-50 text-indigo-600' : 'bg-violet-50 text-violet-600'}`}>Only {activeTab === 'a' ? outletA?.name : outletB?.name}</span>
+                                                        <span className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase ${activeTab === 'a' ? 'bg-indigo-50 text-indigo-600' : 'bg-violet-50 text-violet-600'}`}>Only {activeTab === 'a' ? outletA?.name : outletB?.name}</span>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -351,9 +351,9 @@ export default function Comparison() {
                                 <table className="w-full text-left">
                                     <thead>
                                         <tr className="border-b border-gray-50 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-                                            <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] sticky left-0 bg-gray-50/50 dark:bg-gray-800/30 z-10">Sku & Produk</th>
+                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-[0.2em] sticky left-0 bg-gray-50/50 dark:bg-gray-800/30 z-10">Sku & Produk</th>
                                             {outlets.map(o => (
-                                                <th key={o.id} className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-center min-w-[180px]">
+                                                <th key={o.id} className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-[0.2em] text-center min-w-[180px]">
                                                     {o.name}
                                                 </th>
                                             ))}
@@ -364,7 +364,7 @@ export default function Comparison() {
                                             <tr key={idx} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
                                                 <td className="px-8 py-5 sticky left-0 bg-white dark:bg-gray-900 group-hover:bg-slate-50/50 dark:group-hover:bg-slate-800/20 z-10 border-r border-gray-50 dark:border-gray-800">
                                                     <div className="space-y-0.5">
-                                                        <span className="text-[10px] font-black text-indigo-500 tracking-tighter uppercase">{item.sku}</span>
+                                                        <span className="text-xs font-black text-indigo-500 tracking-tighter uppercase">{item.sku}</span>
                                                         <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">{item.name}</p>
                                                     </div>
                                                 </td>
@@ -373,12 +373,12 @@ export default function Comparison() {
                                                     return (
                                                         <td key={o.id} className="px-8 py-5 text-center">
                                                             {!outletData || !outletData.active ? (
-                                                                <span className="text-[10px] font-bold text-gray-300 uppercase tracking-tighter">- Kosong -</span>
+                                                                <span className="text-xs font-bold text-gray-300 uppercase tracking-tighter">- Kosong -</span>
                                                             ) : (
                                                                 <div className="space-y-1">
                                                                     <div className={`text-lg font-black tracking-tight ${outletData.stock === 0 ? 'text-rose-500' : 'text-gray-900 dark:text-white'}`}>
                                                                         {outletData.stock}
-                                                                        <span className="text-[10px] font-bold text-gray-400 ml-1">PCS</span>
+                                                                        <span className="text-xs font-bold text-gray-400 ml-1">PCS</span>
                                                                     </div>
                                                                     <p className="text-[11px] font-bold text-gray-400">{formatCurrency(outletData.price)}</p>
                                                                 </div>

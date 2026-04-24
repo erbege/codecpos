@@ -10,4 +10,21 @@ export default defineConfig({
         }),
         react(),
     ],
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (id.includes('Pages/POS/')) {
+                        return 'pos';
+                    }
+                    if (id.includes('Pages/Reports/')) {
+                        return 'reports';
+                    }
+                    if (id.includes('Pages/Products/')) {
+                        return 'products';
+                    }
+                },
+            },
+        },
+    },
 });

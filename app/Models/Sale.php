@@ -57,4 +57,24 @@ class Sale extends Model
     {
         return $this->hasMany(SaleReturn::class);
     }
+
+    /**
+     * PHASE 2 OPTIMIZATION - Auto-invalidate cache
+     */
+    protected static function booted()
+    {
+        static::saved(function ($sale) {
+            \Illuminate\Support\Facades\Cache::forget("dashboard_stats_outlet_{$sale->outlet_id}");
+            
+            // Find active shift for this user/outlet and invalidate its cache
+            $activeShift = \App\Models\Shift::where('user_id', $sale->user_id)
+                ->where('outlet_id', $sale->outlet_id)
+                ->where('status', 'open')
+                ->first();
+            
+            if ($activeShift) {
+                \Illuminate\Support\Facades\Cache::forget("shift_{$activeShift->id}_expected_ending_cash");
+            }
+        });
+    }
 }

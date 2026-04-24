@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Services\ProductService;
+use Illuminate\Support\Facades\Cache;
 
 class Product extends Model
 {
@@ -64,5 +66,20 @@ class Product extends Model
     public function isLowStock(): bool
     {
         return $this->stock <= $this->min_stock;
+    }
+
+    /**
+     * PHASE 2 OPTIMIZATION - Auto-invalidate cache
+     */
+    protected static function booted()
+    {
+        static::updated(function ($product) {
+            app(ProductService::class)->invalidateProductCache($product->id);
+        });
+
+        static::deleted(function ($product) {
+            app(ProductService::class)->invalidateProductCache($product->id);
+            Cache::forget('categories_all'); // Might affect category product counts
+        });
     }
 }

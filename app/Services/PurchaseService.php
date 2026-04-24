@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\DB;
 
 class PurchaseService
 {
+    public function __construct(
+        protected ProductService $productService
+    ) {}
+
     /**
      * Create a new purchase transaction.
      * All operations wrapped in a DB transaction for atomicity.
@@ -95,6 +99,9 @@ class PurchaseService
                     'notes' => "Pembelian/Barang Masuk #{$referenceNumber}",
                     'user_id' => Auth::id(),
                 ]);
+
+                // PHASE 2 OPTIMIZATION: Invalidate product cache for this outlet
+                $this->productService->invalidateProductCache($item['product_id'], $outletId);
             }
 
             return $purchase->load('items.product', 'user', 'supplier');

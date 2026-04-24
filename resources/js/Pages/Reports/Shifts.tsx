@@ -124,7 +124,7 @@ export default function ShiftsReport({ shifts, filters, outlets, auth }: Props) 
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xl overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="text-[10px] uppercase font-black text-gray-400 tracking-widest bg-gray-50/50 dark:bg-gray-800/30">
+                            <thead className="text-xs uppercase font-black text-gray-400 tracking-widest bg-gray-50/50 dark:bg-gray-800/30">
                                 <tr>
                                     <th className="px-6 py-4">Informasi Shift</th>
                                     <th className="px-6 py-4">Waktu (Mulai - Selesai)</th>
@@ -144,17 +144,17 @@ export default function ShiftsReport({ shifts, filters, outlets, auth }: Props) 
                                                 </div>
                                                 <div>
                                                     <p className="font-bold text-gray-900 dark:text-white uppercase tracking-tight text-xs">{shift.user.name}</p>
-                                                    <p className="text-[10px] text-gray-400 font-bold flex items-center gap-1 uppercase">
+                                                    <p className="text-xs text-gray-400 font-bold flex items-center gap-1 uppercase">
                                                         <Store className="w-2.5 h-2.5" /> {shift.outlet.name}
                                                     </p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <p className="text-[10px] font-bold text-gray-700 dark:text-gray-300">
+                                            <p className="text-xs font-bold text-gray-700 dark:text-gray-300">
                                                 {new Date(shift.start_time).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}
                                             </p>
-                                            <p className="text-[10px] text-gray-400 italic">
+                                            <p className="text-xs text-gray-400 italic">
                                                 {shift.end_time 
                                                     ? new Date(shift.end_time).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })
                                                     : 'Masih Aktif'}
@@ -171,7 +171,7 @@ export default function ShiftsReport({ shifts, filters, outlets, auth }: Props) 
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             {shift.status === 'closed' ? (
-                                                <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase ring-1 ring-inset 
+                                                <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase ring-1 ring-inset 
                                                     ${shift.discrepancy === 0 
                                                         ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 ring-emerald-500/20' 
                                                         : shift.discrepancy > 0 
@@ -183,7 +183,7 @@ export default function ShiftsReport({ shifts, filters, outlets, auth }: Props) 
                                                     {shift.discrepancy === 0 ? 'Sesuai' : formatCurrency(shift.discrepancy)}
                                                 </div>
                                             ) : (
-                                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest italic animate-pulse">On-Going</span>
+                                                <span className="text-xs font-black text-gray-400 uppercase tracking-widest italic animate-pulse">On-Going</span>
                                             )}
                                         </td>
                                     </tr>
@@ -195,7 +195,7 @@ export default function ShiftsReport({ shifts, filters, outlets, auth }: Props) 
                     </div>
                     
                     <div className="p-6 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800 flex justify-between items-center mt-auto">
-                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                        <div className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
                              <AlertCircle className="w-3 h-3" /> Total Selisih Kas: {formatCurrency(shifts.reduce((acc, curr) => acc + (curr.discrepancy || 0), 0))}
                         </div>
                     </div>

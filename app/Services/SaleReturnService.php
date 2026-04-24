@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\DB;
 
 class SaleReturnService
 {
+    public function __construct(
+        protected ProductService $productService
+    ) {}
+
     /**
      * Process a sale return transaction.
      */
@@ -67,6 +71,9 @@ class SaleReturnService
                     // We'll record it as a log in stock_movements with 0 quantity if it stays out of pool
                     // but for common POS, damaged just doesn't increase 'stock'.
                 }
+
+                // PHASE 2 OPTIMIZATION: Invalidate product cache for this outlet
+                $this->productService->invalidateProductCache($returnItem->product_id, $sale->outlet_id);
             }
 
             // 4. Shift Balance Deduction (Same-Day Refund Logic)

@@ -608,7 +608,7 @@ export default function POS() {
                                             )}
                                             <div className={`w-full aspect-square rounded-xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center mb-3 group-hover:scale-105 transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm group-hover:shadow-md ${inCart ? 'border-transparent' : 'group-hover:border-indigo-200 dark:group-hover:border-indigo-500/50'}`}>
                                                 {product.image ? (
-                                                    <img src={`/storage/${product.image}`} className="w-full h-full object-cover" alt="" />
+                                                    <img src={`/storage/${product.image}`} className="w-full h-full object-cover" alt="" loading="lazy" />
                                                 ) : (
                                                     <Package className="w-5 h-5 text-gray-300 dark:text-gray-600" />
                                                 )}

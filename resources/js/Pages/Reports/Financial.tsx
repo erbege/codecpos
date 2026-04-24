@@ -156,19 +156,19 @@ export default function Financial({ data, filters, outlets, auth }: Props) {
                                     <metric.icon className="w-6 h-6" />
                                 </div>
                                 {metric.label.includes('Gross Profit') && (
-                                    <span className="flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase">
+                                    <span className="flex items-center gap-1 text-xs font-black text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase">
                                         Sehat <Activity className="w-3 h-3" />
                                     </span>
                                 )}
                             </div>
                             <div className="relative z-10">
-                                <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{metric.label}</h3>
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">{metric.label}</h3>
                                 <div className="flex items-baseline gap-1">
                                     <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
                                         {metric.isPercent ? `${metric.value}%` : formatCurrency(metric.value)}
                                     </p>
                                 </div>
-                                <p className="text-[10px] text-gray-500 mt-2 italic leading-relaxed">{metric.desc}</p>
+                                <p className="text-xs text-gray-500 mt-2 italic leading-relaxed">{metric.desc}</p>
                             </div>
                             <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-gray-50 dark:bg-gray-800/10 group-hover:scale-110 transition-transform" />
                         </div>
@@ -190,7 +190,7 @@ export default function Financial({ data, filters, outlets, auth }: Props) {
 
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                                    <div className="flex justify-between text-xs font-black uppercase tracking-widest">
                                         <span className="text-gray-400">Struktur Biaya (COGS)</span>
                                         <span className="text-rose-600">{Math.round((data.cogs / data.revenue) * 100) || 0}%</span>
                                     </div>
@@ -203,7 +203,7 @@ export default function Financial({ data, filters, outlets, auth }: Props) {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                                    <div className="flex justify-between text-xs font-black uppercase tracking-widest">
                                         <span className="text-gray-400">Margin Laba Kotor</span>
                                         <span className="text-emerald-600">{data.margin}%</span>
                                     </div>
@@ -219,7 +219,7 @@ export default function Financial({ data, filters, outlets, auth }: Props) {
 
                         <div className="w-full md:w-64 h-64 bg-gray-50 dark:bg-gray-800/50 rounded-full flex flex-col items-center justify-center border-8 border-white dark:border-gray-900 shadow-inner group relative">
                             <div className="text-center">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Laba</p>
+                                <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Total Laba</p>
                                 <p className="text-lg font-black text-indigo-600">{formatCurrency(data.grossProfit)}</p>
                             </div>
                             {/* Decorative ring */}

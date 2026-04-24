@@ -38,4 +38,18 @@ class OutletProductSetting extends Model
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
+
+    /**
+     * PHASE 2 OPTIMIZATION - Auto-invalidate cache
+     */
+    protected static function booted()
+    {
+        static::saved(function ($setting) {
+            app(\App\Services\ProductService::class)->invalidateProductCache($setting->product_id, $setting->outlet_id);
+        });
+
+        static::deleted(function ($setting) {
+            app(\App\Services\ProductService::class)->invalidateProductCache($setting->product_id, $setting->outlet_id);
+        });
+    }
 }

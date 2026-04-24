@@ -18,3 +18,6 @@ Schedule::call(function () {
         Log::info("Daily Stock Check: Ada {$lowStockCount} produk dengan stok rendah.");
     }
 })->dailyAt('08:00');
+
+// PHASE 3 OPTIMIZATION: Warm up product cache hourly
+Schedule::command('cache:warm-products')->hourly();

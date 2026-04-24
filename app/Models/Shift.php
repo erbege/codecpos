@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 class Shift extends Model
 {
@@ -49,14 +50,27 @@ class Shift extends Model
      */
     public function getExpectedEndingCashAttribute()
     {
-        // Simple logic to calculate expected cash:
-        // Cash Sales made by the user during this shift time + starting cash.
-        
+        // OPTIMIZED: Cache the result for 5 minutes to avoid repeated queries
+        // Invalidate on shift update or when new sales are created
+        $cacheKey = "shift_{$this->id}_expected_ending_cash";
+
+        return Cache::remember($cacheKey, 300, function () {
+            return $this->calculateExpectedCash();
+        });
+    }
+
+    /**
+     * Calculate the expected ending cash amount for this shift
+     * 
+     * Logic: Expected Ending Cash = Starting Cash + Total Cash Sales During Shift
+     */
+    public function calculateExpectedCash()
+    {
         $salesQuery = Sale::where('user_id', $this->user_id)
             ->where('payment_method', 'cash')
             ->where('status', 'completed')
             ->where('created_at', '>=', $this->start_time);
-            
+
         if ($this->end_time) {
             $salesQuery->where('created_at', '<=', $this->end_time);
         }
@@ -64,5 +78,15 @@ class Shift extends Model
         $cashSalesTotal = $salesQuery->sum('total');
 
         return $this->starting_cash + $cashSalesTotal;
+    }
+
+    /**
+     * Clear the cached expected ending cash when shift is updated
+     */
+    protected static function booted()
+    {
+        static::updated(function ($shift) {
+            Cache::forget("shift_{$shift->id}_expected_ending_cash");
+        });
     }
 }

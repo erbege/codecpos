@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\DB;
 
 class SaleService
 {
+    public function __construct(
+        protected ProductService $productService
+    ) {}
+
     /**
      * Create a new sale transaction.
      * All operations wrapped in a DB transaction for atomicity.
@@ -141,6 +145,9 @@ class SaleService
                     'notes' => "Penjualan #{$invoiceNumber}",
                     'user_id' => Auth::id(),
                 ]);
+
+                // PHASE 2 OPTIMIZATION: Invalidate product cache for this outlet
+                $this->productService->invalidateProductCache($item['product']->id, $outletId);
             }
 
             return $sale->load('items.product', 'items.productVariant', 'user', 'customer');
@@ -197,6 +204,9 @@ class SaleService
                     'notes' => "Void transaksi #{$sale->invoice_number}",
                     'user_id' => Auth::id(),
                 ]);
+
+                // PHASE 2 OPTIMIZATION: Invalidate product cache for this outlet
+                $this->productService->invalidateProductCache($item->product_id, $sale->outlet_id);
             }
 
             $sale->update(['status' => 'voided']);

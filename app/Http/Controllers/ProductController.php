@@ -21,7 +21,7 @@ class ProductController extends Controller
         $this->authorize('products.read');
 
         $products = $this->productService->getProducts(request()->all());
-        $categories = Category::where('is_active', true)->orderBy('name')->get();
+        $categories = Category::getAllCached();
 
         return Inertia::render('Products/Index', [
             'products' => $products,
@@ -34,7 +34,7 @@ class ProductController extends Controller
     {
         $this->authorize('products.create');
 
-        $categories = Category::where('is_active', true)->orderBy('name')->get();
+        $categories = Category::getAllCached();
 
         return Inertia::render('Products/Create', [
             'categories' => $categories,

@@ -28,7 +28,7 @@ class SaleController extends Controller
     {
         $user = Auth::user();
         $isAdmin = $user->hasRole('admin') || $user->hasRole('super-admin') || $user->hasRole('owner');
-        
+
         // For Admins/Owners, prioritize session if set.
         if ($isAdmin) {
             return session('active_pos_outlet_id') ?: $user->outlet_id;
@@ -60,46 +60,43 @@ class SaleController extends Controller
 
         // Check if there is an active shift for the user at this specific outlet
         $activeShift = Shift::where('user_id', Auth::id())
-                            ->where('outlet_id', $outletId)
-                            ->where('status', 'open')
-                            ->first();
+            ->where('outlet_id', $outletId)
+            ->where('status', 'open')
+            ->first();
 
         if ($enableShiftManagement && !$activeShift) {
             return redirect()->route('shifts.index')
                 ->with('error', 'Anda harus membuka kasir (shift) terlebih dahulu sebelum melakukan transaksi.');
         }
 
-        $products = Product::whereHas('outletSettings', function($q) use ($outletId) {
-            $q->where('outlet_id', $outletId)->where('is_active', true);
-        })
-        ->with(['category', 'variants.outletSettings' => function($q) use ($outletId) {
-            $q->where('outlet_id', $outletId);
-        }, 'outletSettings' => function($q) use ($outletId) {
-            $q->where('outlet_id', $outletId);
-        }])
-        ->get()
-        ->map(function($product) use ($outletId) {
-            $setting = $product->outletSettings->first();
-            if ($setting) {
-                $product->price = $setting->price ?? $product->price;
-                $product->stock = $setting->stock;
-            }
-
-            // Map variants too
-            $product->variants->map(function($variant) use ($outletId) {
-                $vSetting = $variant->outletSettings->first();
-                if ($vSetting) {
-                    $variant->price = $vSetting->price ?? $variant->price;
-                    $variant->stock = $vSetting->stock;
+        // Use cached product list for outlet to reduce repeat DB queries
+        $products = $this->productService->getProductsForOutletCached($outletId, true)
+            ->map(function ($product) use ($outletId) {
+                $setting = $product->outletSettings->first();
+                if ($setting) {
+                    $product->price = $setting->price ?? $product->price;
+                    $product->stock = $setting->stock;
                 }
-                return $variant;
+
+                // Map variants too
+                $product->variants->map(function ($variant) use ($outletId) {
+                    $vSetting = $variant->outletSettings->first();
+                    if ($vSetting) {
+                        $variant->price = $vSetting->price ?? $variant->price;
+                        $variant->stock = $vSetting->stock;
+                    }
+                    return $variant;
+                });
+
+                return $product;
             });
 
-            return $product;
-        });
-
-        $categories = Category::all();
-        $customers = Customer::all();
+        $categories = Category::getAllCached();
+        // OPTIMIZED: Load only first 50 customers instead of all
+        // Additional customers loaded via API endpoint for search/autocomplete
+        $customers = Customer::orderBy('name')
+            ->limit(50)
+            ->get();
 
         $taxEnabled = filter_var(\App\Models\Setting::get('tax_enabled', 'false'), FILTER_VALIDATE_BOOLEAN);
         $taxPercentage = (float)\App\Models\Setting::get('tax_percentage', 11);
@@ -158,7 +155,7 @@ class SaleController extends Controller
         try {
             $data = $request->validated();
             $data['outlet_id'] = $outletId;
-            
+
             $sale = $this->saleService->createSale($data);
 
             return redirect()->route('pos')->with([
@@ -178,7 +175,7 @@ class SaleController extends Controller
         $this->authorize('sales.read');
 
         $isAdmin = Auth::user()->hasRole('admin') || Auth::user()->hasRole('super-admin');
-        
+
         $sales = Sale::with('user', 'customer', 'outlet')
             ->when(!$isAdmin, function ($query) {
                 $query->where('outlet_id', Auth::user()->outlet_id);
@@ -234,5 +231,36 @@ class SaleController extends Controller
         } catch (\Exception $e) {
             return back()->withErrors(['void' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * API: Search customers by name/phone for POS autocomplete
+     * PERFORMANCE: Allows loading customers on-demand instead of all at once
+     * 
+     * Usage: GET /api/pos/customers/search?q=john
+     */
+    public function searchCustomers()
+    {
+        $this->authorize('sales.create');
+
+        $query = request('q', '');
+
+        $customers = Customer::where('is_active', true)
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                    ->orWhere('phone', 'like', "%{$query}%")
+                    ->orWhere('email', 'like', "%{$query}%");
+            })
+            ->limit(20)
+            ->get(['id', 'name', 'phone', 'email'])
+            ->map(fn($c) => [
+                'id' => $c->id,
+                'label' => "{$c->name}" . ($c->phone ? " ({$c->phone})" : ""),
+                'name' => $c->name,
+                'phone' => $c->phone,
+                'email' => $c->email,
+            ]);
+
+        return response()->json($customers);
     }
 }

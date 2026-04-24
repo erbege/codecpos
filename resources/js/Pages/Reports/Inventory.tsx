@@ -18,15 +18,18 @@ import {
 } from 'lucide-react';
 
 interface Props {
-    stock: Array<{
-        id: number;
-        sku: string;
-        name: string;
-        category: string;
-        stock: number;
-        min_stock: number;
-        value: number;
-    }>;
+    stock: {
+        data: Array<{
+            id: number;
+            sku: string;
+            name: string;
+            category: string;
+            stock: number;
+            min_stock: number;
+            value: number;
+        }>;
+        links: any[];
+    };
     movements: {
         data: Array<{
             id: number;
@@ -153,7 +156,7 @@ export default function Inventory({ stock, movements, filters, outlets, auth }: 
                     <div className="flex-1 p-6">
                         {activeTab === 'status' && (
                             <table className="w-full text-sm text-left">
-                                <thead className="text-[10px] uppercase font-black text-gray-400 tracking-widest bg-gray-50/50 dark:bg-gray-800/30">
+                                <thead className="text-xs uppercase font-black text-gray-500 tracking-widest bg-gray-50/50 dark:bg-gray-800/50">
                                     <tr>
                                         <th className="px-4 py-4">SKU / Nama Produk</th>
                                         <th className="px-4 py-4">Kategori</th>
@@ -163,25 +166,25 @@ export default function Inventory({ stock, movements, filters, outlets, auth }: 
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                                    {stock.length > 0 ? stock.map((item) => {
+                                    {stock.data && stock.data.length > 0 ? stock.data.map((item) => {
                                         const isLow = item.stock <= item.min_stock;
                                         return (
                                             <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                                                 <td className="px-4 py-4">
-                                                    <p className="text-[10px] font-black text-gray-400 mb-0.5">{item.sku}</p>
-                                                    <p className="font-bold text-gray-900 dark:text-white uppercase tracking-tight">{item.name}</p>
+                                                    <p className="text-xs font-black text-gray-500 dark:text-gray-400 mb-1">{item.sku}</p>
+                                                    <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">{item.name}</p>
                                                 </td>
-                                                <td className="px-4 py-4 text-xs font-bold text-gray-500 uppercase">{item.category}</td>
-                                                <td className="px-4 py-4 text-center font-black text-gray-700 dark:text-gray-200">
-                                                    {item.stock} <span className="text-[10px] text-gray-400">UNIT</span>
+                                                <td className="px-4 py-4 text-sm font-bold text-gray-600 dark:text-gray-300 uppercase">{item.category}</td>
+                                                <td className="px-4 py-4 text-center font-black text-gray-800 dark:text-gray-100 text-base">
+                                                    {item.stock} <span className="text-xs text-gray-500 dark:text-gray-400">UNIT</span>
                                                 </td>
                                                 <td className="px-4 py-4 text-center">
                                                     {isLow ? (
-                                                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-500/10 text-red-600 text-[9px] font-black uppercase ring-1 ring-inset ring-red-500/20">
-                                                            <AlertCircle className="w-2.5 h-2.5" /> Stok Menipis
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 dark:bg-red-500/10 text-red-600 text-xs font-black uppercase ring-1 ring-inset ring-red-500/20">
+                                                            <AlertCircle className="w-3.5 h-3.5" /> Stok Menipis
                                                         </span>
                                                     ) : (
-                                                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 text-[9px] font-black uppercase ring-1 ring-inset ring-emerald-500/20">
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 text-xs font-black uppercase ring-1 ring-inset ring-emerald-500/20">
                                                             Tersedia
                                                         </span>
                                                     )}
@@ -200,7 +203,7 @@ export default function Inventory({ stock, movements, filters, outlets, auth }: 
 
                         {activeTab === 'movements' && (
                             <table className="w-full text-sm text-left">
-                                <thead className="text-[10px] uppercase font-black text-gray-400 tracking-widest bg-gray-50/50 dark:bg-gray-800/30">
+                                <thead className="text-xs uppercase font-black text-gray-500 tracking-widest bg-gray-50/50 dark:bg-gray-800/50">
                                     <tr>
                                         <th className="px-4 py-4">Waktu</th>
                                         <th className="px-4 py-4">Produk</th>
@@ -213,28 +216,28 @@ export default function Inventory({ stock, movements, filters, outlets, auth }: 
                                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                     {movements.data.length > 0 ? movements.data.map((m) => (
                                         <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
-                                            <td className="px-4 py-4 text-[10px] font-bold text-gray-500">
+                                            <td className="px-4 py-4 text-xs font-bold text-gray-600 dark:text-gray-400">
                                                 {new Date(m.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}
                                             </td>
                                             <td className="px-4 py-4">
-                                                <p className="font-bold text-gray-900 dark:text-white uppercase tracking-tight text-xs">{m.product.name}</p>
-                                                <p className="text-[10px] text-gray-400">{m.product.sku}</p>
+                                                <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">{m.product.name}</p>
+                                                <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mt-0.5">{m.product.sku}</p>
                                             </td>
                                             <td className="px-4 py-4 text-center">
-                                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase
+                                                <span className={`px-2.5 py-1 rounded-full text-xs font-black uppercase
                                                     ${m.type === 'in' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}
                                                 `}>
                                                     {m.type === 'in' ? 'Masuk' : 'Keluar'}
                                                 </span>
                                             </td>
-                                            <td className={`px-4 py-4 text-center font-black ${m.type === 'in' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                            <td className={`px-4 py-4 text-center font-black text-base ${m.type === 'in' ? 'text-emerald-600' : 'text-red-600'}`}>
                                                 {m.type === 'in' ? '+' : '-'}{Math.abs(m.quantity)}
                                             </td>
-                                            <td className="px-4 py-4 flex items-center gap-1.5 grayscale opacity-70">
-                                                <User className="w-3.5 h-3.5" />
-                                                <span className="text-[10px] font-bold uppercase">{m.user.name}</span>
+                                            <td className="px-4 py-4 flex items-center gap-2 grayscale opacity-80">
+                                                <User className="w-4 h-4" />
+                                                <span className="text-xs font-bold uppercase">{m.user.name}</span>
                                             </td>
-                                            <td className="px-4 py-4 text-[10px] text-gray-500 italic max-w-xs truncate">{m.notes || '-'}</td>
+                                            <td className="px-4 py-4 text-xs font-medium text-gray-600 dark:text-gray-400 italic max-w-xs truncate">{m.notes || '-'}</td>
                                         </tr>
                                     )) : (
                                         <tr><td colSpan={6} className="px-4 py-20 text-center text-gray-400 font-bold uppercase tracking-widest text-xs">Belum ada mutasi stok</td></tr>
@@ -245,8 +248,8 @@ export default function Inventory({ stock, movements, filters, outlets, auth }: 
                     </div>
 
                     <div className="p-6 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800 flex justify-between items-center mt-auto">
-                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                            Total Nilai Aset Inventori : {formatCurrency(stock.reduce((acc, curr) => acc + Number(curr.value), 0))}
+                        <div className="text-sm font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            Total Nilai Aset Inventori : <span className="text-indigo-600 dark:text-indigo-400 ml-2">{formatCurrency(stock.data.reduce((acc, curr) => acc + Number(curr.value), 0))}</span>
                         </div>
                     </div>
                 </div>

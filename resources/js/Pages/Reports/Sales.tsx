@@ -164,7 +164,7 @@ export default function Sales({ data, filters, outlets, auth }: Props) {
                                     {Math.abs(data.summary.growth)}%
                                 </div>
                             </div>
-                            <p className="text-[10px] text-gray-400 font-semibold mt-2 italic">
+                            <p className="text-xs text-gray-400 font-semibold mt-2 italic">
                                 Dibandingkan periode sebelumnya: {formatCurrency(data.summary.prev_total_sales)}
                             </p>
                         </div>
@@ -172,7 +172,7 @@ export default function Sales({ data, filters, outlets, auth }: Props) {
                         <div className="flex-1 w-full">
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Tren Penjualan Harian</p>
                             <div className="h-16 w-full">
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                     <AreaChart data={data.dailyTrend}>
                                         <defs>
                                             <linearGradient id="colorTrend" x1="0" y1="0" x2="0" y2="1">
@@ -195,16 +195,16 @@ export default function Sales({ data, filters, outlets, auth }: Props) {
                                     <Calendar className="w-4 h-4 text-indigo-200" />
                                     <div className="flex items-center gap-1.5 flex-1">
                                         <input type="date" value={filters.date_from} onChange={(e) => handleFilterChange('date_from', e.target.value)}
-                                            className="bg-indigo-500/30 border-none rounded-lg text-[10px] font-black text-white px-2 py-1 w-full focus:ring-1 focus:ring-white/50" />
-                                        <span className="text-indigo-300 text-[10px]">TO</span>
+                                            className="bg-indigo-500/30 border-none rounded-lg text-xs font-black text-white px-2 py-1 w-full focus:ring-1 focus:ring-white/50" />
+                                        <span className="text-indigo-300 text-xs">TO</span>
                                         <input type="date" value={filters.date_to} onChange={(e) => handleFilterChange('date_to', e.target.value)}
-                                            className="bg-indigo-500/30 border-none rounded-lg text-[10px] font-black text-white px-2 py-1 w-full focus:ring-1 focus:ring-white/50" />
+                                            className="bg-indigo-500/30 border-none rounded-lg text-xs font-black text-white px-2 py-1 w-full focus:ring-1 focus:ring-white/50" />
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <Filter className="w-4 h-4 text-indigo-200" />
                                     <select value={filters.outlet_id || ''} onChange={(e) => handleFilterChange('outlet_id', e.target.value)}
-                                        className="bg-indigo-500/30 border-none rounded-lg text-[10px] font-black text-white px-2 py-1 w-full focus:ring-1 focus:ring-white/50">
+                                        className="bg-indigo-500/30 border-none rounded-lg text-xs font-black text-white px-2 py-1 w-full focus:ring-1 focus:ring-white/50">
                                         <option value="" className="text-gray-900">SEMUA OUTLET</option>
                                         {outlets.map(o => <option key={o.id} value={o.id} className="text-gray-900">{o.name.toUpperCase()}</option>)}
                                     </select>
@@ -261,7 +261,7 @@ export default function Sales({ data, filters, outlets, auth }: Props) {
                         <div className={`transition-all duration-500 ${showChart ? 'lg:w-[60%]' : 'w-full'}`}>
                             {activeTab === 'product' && (
                                 <table className="w-full text-xs text-left">
-                                    <thead className="text-[10px] uppercase font-bold text-gray-400 tracking-wider bg-gray-50/50 dark:bg-gray-800/30">
+                                    <thead className="text-xs uppercase font-black text-gray-500 tracking-wider bg-gray-50/50 dark:bg-gray-800/50">
                                         <tr>
                                             <th className="px-4 py-4 rounded-l-xl">Nama Produk</th>
                                             <th className="px-4 py-4 text-center">Terjual</th>
@@ -272,8 +272,8 @@ export default function Sales({ data, filters, outlets, auth }: Props) {
                                         {data.byProduct.length > 0 ? data.byProduct.map((item, idx) => (
                                             <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors group">
                                                 <td className="px-4 py-4 font-bold text-gray-700 dark:text-gray-300 uppercase tracking-tight">{item.product_name}</td>
-                                                <td className="px-4 py-4 text-center font-bold text-gray-600 dark:text-gray-400">{item.total_qty} <span className="text-[10px] text-gray-400 font-medium">PCS</span></td>
-                                                <td className="px-4 py-4 text-right font-black text-indigo-600 dark:text-indigo-400">{formatCurrency(Number(item.total_amount))}</td>
+                                                <td className="px-4 py-4 text-center font-bold text-gray-600 dark:text-gray-400 text-sm">{item.total_qty} <span className="text-xs text-gray-500 font-medium ml-1">PCS</span></td>
+                                                <td className="px-4 py-4 text-right font-black text-indigo-600 dark:text-indigo-400 text-sm">{formatCurrency(Number(item.total_amount))}</td>
                                             </tr>
                                         )) : (
                                             <tr><td colSpan={3} className="px-4 py-20 text-center text-gray-400 font-bold uppercase tracking-widest text-xs">Belum ada data</td></tr>
@@ -284,7 +284,7 @@ export default function Sales({ data, filters, outlets, auth }: Props) {
 
                             {activeTab === 'category' && (
                                 <table className="w-full text-xs text-left">
-                                    <thead className="text-[10px] uppercase font-bold text-gray-400 tracking-wider bg-gray-50/50 dark:bg-gray-800/30">
+                                    <thead className="text-xs uppercase font-black text-gray-500 tracking-wider bg-gray-50/50 dark:bg-gray-800/50">
                                         <tr>
                                             <th className="px-4 py-4 rounded-l-xl">Nama Kategori</th>
                                             <th className="px-4 py-4 text-center">Terjual</th>
@@ -295,8 +295,8 @@ export default function Sales({ data, filters, outlets, auth }: Props) {
                                         {data.byCategory.length > 0 ? data.byCategory.map((item, idx) => (
                                             <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors group">
                                                 <td className="px-4 py-4 font-bold text-gray-700 dark:text-gray-300 uppercase tracking-tight">{item.category_name}</td>
-                                                <td className="px-4 py-4 text-center font-bold text-gray-600 dark:text-gray-400">{item.total_qty} <span className="text-[10px] text-gray-400 font-medium">PCS</span></td>
-                                                <td className="px-4 py-4 text-right font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(Number(item.total_amount))}</td>
+                                                <td className="px-4 py-4 text-center font-bold text-gray-600 dark:text-gray-400 text-sm">{item.total_qty} <span className="text-xs text-gray-500 font-medium ml-1">PCS</span></td>
+                                                <td className="px-4 py-4 text-right font-black text-emerald-600 dark:text-emerald-400 text-sm">{formatCurrency(Number(item.total_amount))}</td>
                                             </tr>
                                         )) : (
                                             <tr><td colSpan={3} className="px-4 py-20 text-center text-gray-400 font-bold uppercase tracking-widest text-xs">Belum ada data</td></tr>
@@ -313,10 +313,10 @@ export default function Sales({ data, filters, outlets, auth }: Props) {
                                                 <div className="w-10 h-10 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-indigo-600 shadow-sm">
                                                     <CreditCard className="w-5 h-5" />
                                                 </div>
-                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{item.count} Transaksi</span>
+                                                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{item.count} Transaksi</span>
                                             </div>
                                             <div>
-                                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{item.payment_method}</h4>
+                                                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{item.payment_method}</h4>
                                                 <p className="text-xl font-black text-slate-800 dark:text-white tracking-tight">{formatCurrency(Number(item.total_amount))}</p>
                                             </div>
                                         </div>
@@ -337,7 +337,7 @@ export default function Sales({ data, filters, outlets, auth }: Props) {
                                 </div>
 
                                 <div className="flex-1 w-full min-h-[300px]">
-                                    <ResponsiveContainer width="100%" height="100%">
+                                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                         {activeTab === 'product' ? (
                                             <BarChart data={topProductsData} layout="vertical" margin={{ left: 20 }}>
                                                 <XAxis type="number" hide />
@@ -346,7 +346,7 @@ export default function Sales({ data, filters, outlets, auth }: Props) {
                                                     cursor={{ fill: 'transparent' }} 
                                                     content={({ active, payload }) => {
                                                         if (active && payload && payload.length) return (
-                                                            <div className="bg-slate-900 text-white p-2 rounded-lg text-[10px] font-bold shadow-xl border border-white/10">
+                                                            <div className="bg-slate-900 text-white p-2 rounded-lg text-xs font-bold shadow-xl border border-white/10">
                                                                 {formatCurrency(payload[0].value as number)}
                                                             </div>
                                                         );
@@ -373,7 +373,7 @@ export default function Sales({ data, filters, outlets, auth }: Props) {
                                                 <Tooltip 
                                                     content={({ active, payload }) => {
                                                         if (active && payload && payload.length) return (
-                                                            <div className="bg-slate-900 text-white p-2 rounded-lg text-[10px] font-bold shadow-xl border border-white/10">
+                                                            <div className="bg-slate-900 text-white p-2 rounded-lg text-xs font-bold shadow-xl border border-white/10">
                                                                 {payload[0].name}: {formatCurrency(payload[0].value as number)}
                                                             </div>
                                                         );
@@ -390,7 +390,7 @@ export default function Sales({ data, filters, outlets, auth }: Props) {
                                                     cursor={{ fill: '#f1f5f9' }}
                                                     content={({ active, payload }) => {
                                                         if (active && payload && payload.length) return (
-                                                            <div className="bg-slate-900 text-white p-2 rounded-lg text-[10px] font-bold shadow-xl border border-white/10">
+                                                            <div className="bg-slate-900 text-white p-2 rounded-lg text-xs font-bold shadow-xl border border-white/10">
                                                                 {formatCurrency(payload[0].value as number)}
                                                             </div>
                                                         );
@@ -408,7 +408,7 @@ export default function Sales({ data, filters, outlets, auth }: Props) {
                                         {categoryPieData.slice(0, 6).map((item, idx) => (
                                             <div key={idx} className="flex items-center gap-2">
                                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }} />
-                                                <span className="text-[9px] font-bold text-gray-500 truncate max-w-[80px]">{item.name}</span>
+                                                <span className="text-xs font-bold text-gray-600 truncate max-w-[80px]">{item.name}</span>
                                             </div>
                                         ))}
                                     </div>

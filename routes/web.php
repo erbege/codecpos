@@ -44,6 +44,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/pos', [SaleController::class, 'create'])->name('pos');
     Route::post('/pos/checkout', [SaleController::class, 'store'])->name('pos.checkout');
     Route::post('/pos/set-outlet', [SaleController::class, 'setOutlet'])->name('pos.set-outlet');
+    Route::get('/api/pos/customers/search', [SaleController::class, 'searchCustomers'])->name('api.pos.customers.search');
 
     // Sales History
     Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
@@ -96,7 +97,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/comparison', [ReportController::class, 'comparison'])->name('reports.comparison');
         Route::get('/comparison/export-excel', [ReportController::class, 'exportComparisonExcel'])->name('reports.comparison.export.excel');
         Route::get('/comparison/export-pdf', [ReportController::class, 'exportComparisonPdf'])->name('reports.comparison.export.pdf');
-        
+
         // Exports
         Route::get('/shifts', [ReportController::class, 'shifts'])->name('reports.shifts');
         Route::get('/sales/export-excel', [ReportController::class, 'exportSalesExcel'])->name('reports.sales.export.excel');
@@ -104,4 +105,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

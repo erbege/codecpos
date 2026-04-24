@@ -40,9 +40,9 @@ class ReportController extends Controller
             ->first();
 
         // Stock Summary
-        $totalStockValue = Product::whereHas('outletSettings', function($q) use ($outletId) {
+        $totalStockValue = Product::whereHas('outletSettings', function ($q) use ($outletId) {
             if ($outletId) $q->where('outlet_id', $outletId);
-        })->get()->sum(function($p) {
+        })->get()->sum(function ($p) {
             return $p->stock * ($p->cost_price ?? 0);
         });
 
@@ -83,22 +83,22 @@ class ReportController extends Controller
         $dateTo = $filters['date_to'];
 
         // 1. Sales by Product
-        $salesByProduct = SaleItem::whereHas('sale', function($q) use ($outletId, $dateFrom, $dateTo) {
-                $q->where('status', 'completed')
-                  ->when($outletId, fn($sq) => $sq->where('outlet_id', $outletId))
-                  ->whereBetween('created_at', [$dateFrom, $dateTo . ' 23:59:59']);
-            })
+        $salesByProduct = SaleItem::whereHas('sale', function ($q) use ($outletId, $dateFrom, $dateTo) {
+            $q->where('status', 'completed')
+                ->when($outletId, fn($sq) => $sq->where('outlet_id', $outletId))
+                ->whereBetween('created_at', [$dateFrom, $dateTo . ' 23:59:59']);
+        })
             ->select('product_name', DB::raw('SUM(qty) as total_qty'), DB::raw('SUM(subtotal) as total_amount'))
             ->groupBy('product_name')
             ->orderByDesc('total_qty')
             ->get();
 
         // 2. Sales by Category
-        $salesByCategory = SaleItem::whereHas('sale', function($q) use ($outletId, $dateFrom, $dateTo) {
-                $q->where('status', 'completed')
-                  ->when($outletId, fn($sq) => $sq->where('outlet_id', $outletId))
-                  ->whereBetween('created_at', [$dateFrom, $dateTo . ' 23:59:59']);
-            })
+        $salesByCategory = SaleItem::whereHas('sale', function ($q) use ($outletId, $dateFrom, $dateTo) {
+            $q->where('status', 'completed')
+                ->when($outletId, fn($sq) => $sq->where('outlet_id', $outletId))
+                ->whereBetween('created_at', [$dateFrom, $dateTo . ' 23:59:59']);
+        })
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->join('categories', 'products.category_id', '=', 'categories.id')
             ->select('categories.name as category_name', DB::raw('SUM(sale_items.qty) as total_qty'), DB::raw('SUM(sale_items.subtotal) as total_amount'))
@@ -172,23 +172,25 @@ class ReportController extends Controller
         $outletId = $filters['outlet_id'];
 
         // Current Stock with Pagination
-        $currentStock = Product::with('category')
-            ->whereHas('outletSettings', function($q) use ($outletId) {
+        // OPTIMIZED: Eager load all outlet settings at once instead of per-product query
+        $currentStock = Product::with([
+            'category',
+            'outletSettings' => function ($q) use ($outletId) {
+                if ($outletId) $q->where('outlet_id', $outletId);
+                $q->whereNull('product_variant_id');
+            }
+        ])
+            ->whereHas('outletSettings', function ($q) use ($outletId) {
                 if ($outletId) $q->where('outlet_id', $outletId);
                 $q->where('is_active', true);
             })
             ->select('products.*')
             ->orderBy('name')
             ->paginate(50)
-            ->through(function($p) use ($outletId) {
-                // Ensure we use the correct stock from outlet settings
-                // (This is already handled by our previous logic in ProductService or similar, 
-                // but for this specific report we want to be explicit)
-                $setting = \App\Models\OutletProductSetting::where('product_id', $p->id)
-                    ->when($outletId, fn($q) => $q->where('outlet_id', $outletId))
-                    ->where('product_variant_id', null)
-                    ->first();
-                
+            ->through(function ($p) use ($outletId) {
+                // Use already-loaded outletSettings from eager loading
+                $setting = $p->outletSettings->first();
+
                 return [
                     'id' => $p->id,
                     'sku' => $p->sku,
@@ -228,11 +230,11 @@ class ReportController extends Controller
 
         // 1. Gross Profit Calculation
         // Profit = Sales Revenue - Cost of Goods Sold (COGS)
-        $salesItems = SaleItem::whereHas('sale', function($q) use ($outletId, $dateFrom, $dateTo) {
-                $q->where('status', 'completed')
-                  ->when($outletId, fn($sq) => $sq->where('outlet_id', $outletId))
-                  ->whereBetween('created_at', [$dateFrom, $dateTo . ' 23:59:59']);
-            })
+        $salesItems = SaleItem::whereHas('sale', function ($q) use ($outletId, $dateFrom, $dateTo) {
+            $q->where('status', 'completed')
+                ->when($outletId, fn($sq) => $sq->where('outlet_id', $outletId))
+                ->whereBetween('created_at', [$dateFrom, $dateTo . ' 23:59:59']);
+        })
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->selectRaw('SUM(sale_items.subtotal) as total_revenue, SUM(sale_items.qty * products.cost_price) as total_cogs')
             ->first();
@@ -317,12 +319,12 @@ class ReportController extends Controller
         $this->authorize('reports.export');
         $filters = $this->getFilters($request);
         $outletId = $filters['outlet_id'];
-        
-        $data = SaleItem::whereHas('sale', function($q) use ($filters, $outletId) {
-                $q->where('status', 'completed')
-                  ->when($outletId, fn($sq) => $sq->where('outlet_id', $outletId))
-                  ->whereBetween('created_at', [$filters['date_from'], $filters['date_to'] . ' 23:59:59']);
-            })
+
+        $data = SaleItem::whereHas('sale', function ($q) use ($filters, $outletId) {
+            $q->where('status', 'completed')
+                ->when($outletId, fn($sq) => $sq->where('outlet_id', $outletId))
+                ->whereBetween('created_at', [$filters['date_from'], $filters['date_to'] . ' 23:59:59']);
+        })
             ->select('product_name', DB::raw('SUM(qty) as total_qty'), DB::raw('SUM(subtotal) as total_amount'))
             ->groupBy('product_name')
             ->orderByDesc('total_qty')
@@ -341,11 +343,11 @@ class ReportController extends Controller
         $outletId = $filters['outlet_id'];
         $outlet = $outletId ? Outlet::find($outletId) : null;
 
-        $data = SaleItem::whereHas('sale', function($q) use ($filters, $outletId) {
-                $q->where('status', 'completed')
-                  ->when($outletId, fn($sq) => $sq->where('outlet_id', $outletId))
-                  ->whereBetween('created_at', [$filters['date_from'], $filters['date_to'] . ' 23:59:59']);
-            })
+        $data = SaleItem::whereHas('sale', function ($q) use ($filters, $outletId) {
+            $q->where('status', 'completed')
+                ->when($outletId, fn($sq) => $sq->where('outlet_id', $outletId))
+                ->whereBetween('created_at', [$filters['date_from'], $filters['date_to'] . ' 23:59:59']);
+        })
             ->select('product_name', DB::raw('SUM(qty) as total_qty'), DB::raw('SUM(subtotal) as total_amount'))
             ->groupBy('product_name')
             ->orderByDesc('total_qty')
@@ -378,8 +380,8 @@ class ReportController extends Controller
             ->map(function ($shift) {
                 // Ensure expected cash is calculated
                 $shift->expected_ending_cash = $shift->expected_ending_cash_attribute;
-                $shift->discrepancy = $shift->status === 'closed' 
-                    ? (float)$shift->actual_ending_cash - (float)$shift->expected_ending_cash 
+                $shift->discrepancy = $shift->status === 'closed'
+                    ? (float)$shift->actual_ending_cash - (float)$shift->expected_ending_cash
                     : 0;
                 return $shift;
             });
@@ -397,7 +399,7 @@ class ReportController extends Controller
     public function comparison(Request $request): Response
     {
         $this->authorize('reports.view');
-        
+
         $outlets = Outlet::all();
         $filters = [
             'view' => $request->get('view', 'side-by-side'),
@@ -505,7 +507,7 @@ class ReportController extends Controller
                             ->where('outlet_id', $outlet->id)
                             ->where('product_variant_id', $item['variant_id'])
                             ->first();
-                        
+
                         $itemOutlets[$outlet->id] = [
                             'active' => $setting ? $setting->is_active : false,
                             'stock' => $setting ? $setting->stock : 0,
@@ -516,18 +518,18 @@ class ReportController extends Controller
                     $comparisonData['matrix'][] = $item;
                 }
             }
-        } 
-        
+        }
+
         // 2. Side-by-Side View (Targeted Comparison)
         if ($outletAId && $outletBId) {
             // Find all products that are active in at least one of the outlets
-            $products = Product::with(['variants', 'outletSettings' => function($q) use ($outletAId, $outletBId) {
+            $products = Product::with(['variants', 'outletSettings' => function ($q) use ($outletAId, $outletBId) {
                 $q->whereIn('outlet_id', [$outletAId, $outletBId]);
             }])
-            ->whereHas('outletSettings', function($q) use ($outletAId, $outletBId) {
-                $q->whereIn('outlet_id', [$outletAId, $outletBId])->where('is_active', true);
-            })
-            ->get();
+                ->whereHas('outletSettings', function ($q) use ($outletAId, $outletBId) {
+                    $q->whereIn('outlet_id', [$outletAId, $outletBId])->where('is_active', true);
+                })
+                ->get();
 
             foreach ($products as $product) {
                 $itemsToCompare = [];

@@ -173,7 +173,7 @@ export default function Index({ summary, chartData, filters, outlets, auth }: Pr
                     <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden relative group hover:border-indigo-500 transition-colors">
                         <div className="flex items-center justify-between relative z-10">
                             <div>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Penjualan</p>
+                                <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Total Penjualan</p>
                                 <h3 className="text-xl font-black text-gray-900 dark:text-white">{formatCurrency(summary.sales.gross_sales || 0)}</h3>
                             </div>
                             <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600">
@@ -186,7 +186,7 @@ export default function Index({ summary, chartData, filters, outlets, auth }: Pr
                     <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden relative group hover:border-emerald-500 transition-colors">
                         <div className="flex items-center justify-between relative z-10">
                             <div>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Transaksi</p>
+                                <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Total Transaksi</p>
                                 <h3 className="text-xl font-black text-gray-900 dark:text-white">{summary.sales.total_orders || 0}</h3>
                             </div>
                             <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600">
@@ -199,7 +199,7 @@ export default function Index({ summary, chartData, filters, outlets, auth }: Pr
                     <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden relative group hover:border-amber-500 transition-colors">
                         <div className="flex items-center justify-between relative z-10">
                             <div>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Nilai Inventori</p>
+                                <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Nilai Inventori</p>
                                 <h3 className="text-xl font-black text-gray-900 dark:text-white">{formatCurrency(summary.inventory.totalValue || 0)}</h3>
                             </div>
                             <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-600">
@@ -212,7 +212,7 @@ export default function Index({ summary, chartData, filters, outlets, auth }: Pr
                     <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden relative group hover:border-red-500 transition-colors">
                         <div className="flex items-center justify-between relative z-10">
                             <div>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Stok Menipis</p>
+                                <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Stok Menipis</p>
                                 <h3 className="text-xl font-black text-gray-900 dark:text-white">{summary.inventory.lowStockCount || 0} Item</h3>
                             </div>
                             <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center text-red-600">
@@ -230,7 +230,7 @@ export default function Index({ summary, chartData, filters, outlets, auth }: Pr
                         <div className="flex items-center justify-between mb-6">
                             <div>
                                 <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">Trend Penjualan</h3>
-                                <p className="text-[10px] text-gray-500">Akumulasi pendapatan harian</p>
+                                <p className="text-xs text-gray-500">Akumulasi pendapatan harian</p>
                             </div>
                             <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-400">
                                 <TrendingUp className="w-4 h-4" />
@@ -239,7 +239,7 @@ export default function Index({ summary, chartData, filters, outlets, auth }: Pr
 
                         <div className="h-72 w-full">
                             {chartData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                     <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
@@ -278,7 +278,7 @@ export default function Index({ summary, chartData, filters, outlets, auth }: Pr
                                     </AreaChart>
                                 </ResponsiveContainer>
                             ) : (
-                                <div className="h-full flex items-center justify-center text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+                                <div className="h-full flex items-center justify-center text-gray-400 font-bold uppercase tracking-widest text-xs">
                                     Belum ada data periode ini
                                 </div>
                             )}
@@ -311,7 +311,7 @@ export default function Index({ summary, chartData, filters, outlets, auth }: Pr
                                     </div>
                                     <div className="flex-1">
                                         <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">{report.title}</h4>
-                                        <p className="text-[10px] text-gray-500 line-clamp-1">{report.desc}</p>
+                                        <p className="text-xs text-gray-500 line-clamp-1">{report.desc}</p>
                                     </div>
                                     <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
                                 </Link>

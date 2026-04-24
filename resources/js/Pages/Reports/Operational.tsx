@@ -141,7 +141,7 @@ export default function Operational({ data, filters, outlets, auth }: Props) {
                             <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600">
                                 <Receipt className="w-5 h-5" />
                             </div>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Pajak (PPN)</p>
+                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Total Pajak (PPN)</p>
                         </div>
                         <h3 className="text-xl font-black text-gray-900 dark:text-white leading-tight">
                             {formatCurrency(Number(data.summary.total_tax || 0))}
@@ -153,7 +153,7 @@ export default function Operational({ data, filters, outlets, auth }: Props) {
                             <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-orange-600">
                                 <Tag className="w-5 h-5" />
                             </div>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Diskon</p>
+                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Total Diskon</p>
                         </div>
                         <h3 className="text-xl font-black text-gray-900 dark:text-white leading-tight">
                             {formatCurrency(Number(data.summary.total_discount || 0))}
@@ -165,7 +165,7 @@ export default function Operational({ data, filters, outlets, auth }: Props) {
                             <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600">
                                 <Target className="w-5 h-5" />
                             </div>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Avg. Transaction</p>
+                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Avg. Transaction</p>
                         </div>
                         <h3 className="text-xl font-black text-gray-900 dark:text-white leading-tight">
                             {formatCurrency(Number(data.summary.avg_transaction_value || 0))}
@@ -177,7 +177,7 @@ export default function Operational({ data, filters, outlets, auth }: Props) {
                             <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center text-rose-600">
                                 <XCircle className="w-5 h-5" />
                             </div>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Voided Sales</p>
+                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Voided Sales</p>
                         </div>
                         <h3 className="text-xl font-black text-gray-900 dark:text-white leading-tight">
                             {data.summary.void_count || 0} <span className="text-[11px] text-gray-400">Order</span>
@@ -190,7 +190,7 @@ export default function Operational({ data, filters, outlets, auth }: Props) {
                     <div className="lg:col-span-2 bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
                         <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider mb-6">Analisis Pajak & Diskon</h3>
                         <div className="h-72 w-full">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                 <BarChart data={data.daily}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.5} />
                                     <XAxis 
@@ -214,7 +214,7 @@ export default function Operational({ data, filters, outlets, auth }: Props) {
                     <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col">
                         <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider mb-6">Status Transaksi</h3>
                         <div className="flex-1 w-full min-h-[250px]">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                 <PieChart>
                                     <Pie
                                         data={statusPieData}
@@ -239,7 +239,7 @@ export default function Operational({ data, filters, outlets, auth }: Props) {
                             {statusPieData.map((item, idx) => (
                                 <div key={idx} className="flex items-center gap-2">
                                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }} />
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase">{item.name}</span>
+                                    <span className="text-xs font-bold text-gray-500 uppercase">{item.name}</span>
                                 </div>
                             ))}
                         </div>
@@ -253,7 +253,7 @@ export default function Operational({ data, filters, outlets, auth }: Props) {
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs text-left">
-                            <thead className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                            <thead className="text-xs uppercase font-bold text-gray-400 tracking-wider">
                                 <tr>
                                     <th className="px-6 py-4">Tanggal</th>
                                     <th className="px-6 py-4 text-center">Transaksi</th>
