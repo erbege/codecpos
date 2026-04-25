@@ -4,6 +4,8 @@ import { printerService } from '@/Utils/printer';
 import { PageProps, Product, Category, Customer, Outlet } from '@/types';
 import { useCartStore } from '@/stores/useCartStore';
 import { useAppStore } from '@/stores/useAppStore';
+import { usePendingTransactions } from '@/stores/usePendingTransactions';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import {
     Search,
     ShoppingCart,
@@ -27,7 +29,7 @@ import {
     ChevronLeft,
     ChevronRight,
 } from 'lucide-react';
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import ThermalReceipt from '@/Components/ThermalReceipt';
 import Drawer from '@/Components/Drawer';
@@ -35,6 +37,7 @@ import Modal from '@/Components/Modal';
 import NumericInput from '@/Components/NumericInput';
 import SwitchUserModal from '@/Components/SwitchUserModal';
 import PrinterStatusIndicator from '@/Components/PrinterStatusIndicator';
+import NetworkStatusBar from '@/Components/NetworkStatusBar';
 
 interface Props extends PageProps {
     products: Product[];
@@ -84,6 +87,9 @@ export default function POS() {
     const { auth, flash, products, categories, customers, taxRate, taxPerItem, outlets, currentOutletId, canSwitchOutlet, users, app_settings, activePromotions } = usePage<Props>().props;
     const cart = useCartStore();
     const { posViewMode, setPosViewMode, confirm: appConfirm, closeDialog } = useAppStore();
+    const pendingStore = usePendingTransactions();
+    const networkStatus = useNetworkStatus('/api/ping', 30000);
+    const [isSyncing, setIsSyncing] = useState(false);
     const [search, setSearch] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
     const [showCheckout, setShowCheckout] = useState(false);
@@ -109,6 +115,46 @@ export default function POS() {
     const [showSwitchUserModal, setShowSwitchUserModal] = useState(false);
     const [showTaxDetails, setShowTaxDetails] = useState(false);
     const enableShiftManagement = app_settings?.enable_shift_management ?? true;
+
+    // ─── Beforeunload Protection ──────────────────────────────────────
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (cart.items.length > 0 || pendingStore.getPendingCount() > 0) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [cart.items.length, pendingStore.transactions.length]);
+
+    // ─── Network Status Toast Notifications ───────────────────────────
+    const prevOnlineRef = useRef(networkStatus.isOnline);
+    useEffect(() => {
+        if (prevOnlineRef.current !== networkStatus.isOnline) {
+            if (networkStatus.isOnline) {
+                toast.success('Koneksi pulih kembali', {
+                    description: pendingStore.getPendingCount() > 0
+                        ? `${pendingStore.getPendingCount()} transaksi menunggu sinkronisasi`
+                        : undefined,
+                    duration: 4000,
+                });
+            } else {
+                toast.error('Koneksi terputus', {
+                    description: 'Transaksi akan diantrekan secara lokal jika checkout gagal',
+                    duration: 6000,
+                });
+            }
+            prevOnlineRef.current = networkStatus.isOnline;
+        }
+    }, [networkStatus.isOnline]);
+
+    // ─── Auto-sync pending transactions when back online ──────────────
+    useEffect(() => {
+        if (networkStatus.isOnline && pendingStore.getPendingCount() > 0 && !isSyncing) {
+            handleSyncPending();
+        }
+    }, [networkStatus.isOnline]);
 
     const openCustomerModal = () => {
         customerForm.reset();
@@ -541,12 +587,9 @@ export default function POS() {
         return Array.from(suggestions).sort((a, b) => a - b).slice(0, 4);
     }, [total]);
 
-    const handleCheckout = () => {
-        if (cart.items.length === 0) return;
-        if (Number(paidAmount) < total) return;
-
-        setProcessing(true);
-        router.post('/pos/checkout', {
+    // ─── Build checkout payload (reusable) ──────────────────────────
+    const buildCheckoutPayload = useCallback(() => {
+        return {
             items: cart.items.map((item: any) => ({
                 product_id: item.product.real_product_id,
                 product_variant_id: item.product.variant_id || null,
@@ -559,55 +602,189 @@ export default function POS() {
             payment_method: paymentMethod,
             customer_id: selectedCustomer,
             notes: notes,
-        }, {
-            preserveState: true,
-            preserveScroll: true,
-            onSuccess: (page) => {
-                const flashProps = page.props.flash as any;
-                
-                if (flashProps.last_sale_data) {
-                    setCompletedSale(flashProps.last_sale_data);
-                } else {
-                    const lastItems = [...cart.items];
-                    const customerObj = customers.find(c => c.id === Number(selectedCustomer));
-                    
-                    setCompletedSale({
-                        invoice_number: flashProps.last_sale_invoice || 'INV-TEMP', 
-                        customer: customerObj,
-                        items: lastItems.map(i => ({
-                            product_name: i.product?.name || 'Produk',
-                            price: Number(i.product?.price || 0),
-                            qty: Number(i.qty || 0),
-                            subtotal: Number(i.product?.price || 0) * Number(i.qty || 0) - Number(i.discount || 0),
-                            discount: Number(i.discount || 0)
-                        })),
-                        subtotal: Number(subtotal),
-                        discount: Number(totalGlobalDiscount),
-                        tax: Number(taxAmount),
-                        total: Number(total),
-                        paid: Number(paidAmount || 0),
-                        change: Number(change || 0),
-                        payment_method: paymentMethod,
-                        created_at: new Date().toISOString(),
-                        outlet: (auth as any)?.user?.outlet || null
-                    });
-                }
+        };
+    }, [cart.items, taxAmount, totalGlobalDiscount, paidAmount, paymentMethod, selectedCustomer, notes]);
 
-                cart.clearCart();
-                setSearch('');
-                setSelectedCategory(null);
-                setShowCheckout(false);
-                setPaidAmount('');
-                setNotes('');
-                setGlobalDiscount('0');
-                setSelectedCustomer(null);
-                setProcessing(false);
-            },
-            onError: () => {
-                setProcessing(false);
-            },
+    // ─── Build local sale snapshot for pending queue ───────────────
+    const buildLocalSaleData = useCallback(() => {
+        const customerObj = customers.find(c => c.id === Number(selectedCustomer));
+        return {
+            invoice_number: 'PENDING',
+            customer: customerObj || null,
+            items: cart.items.map(i => ({
+                product_name: i.product?.name || 'Produk',
+                price: Number(i.product?.price || 0),
+                qty: Number(i.qty || 0),
+                subtotal: Number(i.product?.price || 0) * Number(i.qty || 0) - Number(i.discount || 0),
+                discount: Number(i.discount || 0)
+            })),
+            subtotal: Number(subtotal),
+            discount: Number(totalGlobalDiscount),
+            tax: Number(taxAmount),
+            total: Number(total),
+            paid: Number(paidAmount || 0),
+            change: Number(change || 0),
+            payment_method: paymentMethod,
+            created_at: new Date().toISOString(),
+            outlet: (auth as any)?.user?.outlet || null
+        };
+    }, [cart.items, customers, selectedCustomer, subtotal, totalGlobalDiscount, taxAmount, total, paidAmount, change, paymentMethod, auth]);
+
+    // ─── Checkout with auto-retry + pending queue fallback ─────────
+    const handleCheckout = async () => {
+        if (cart.items.length === 0) return;
+        if (Number(paidAmount) < total) return;
+
+        setProcessing(true);
+        const payload = buildCheckoutPayload();
+        const localSaleData = buildLocalSaleData();
+
+        // If clearly offline, queue immediately
+        if (!networkStatus.isOnline) {
+            pendingStore.addTransaction(payload, localSaleData);
+            toast.warning('Transaksi disimpan ke antrian offline', {
+                description: 'Akan disinkronkan otomatis saat koneksi pulih.',
+                duration: 5000,
+            });
+            resetAfterCheckout();
+            return;
+        }
+
+        // Try checkout with auto-retry (max 3 attempts)
+        let lastError = '';
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const response = await fetch('/api/pos/offline-sync', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || '',
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        setCompletedSale(result.sale || localSaleData);
+                        resetAfterCheckout();
+                        // Refresh page data silently to update stock
+                        router.reload({ only: ['products', 'activePromotions'] });
+                        return;
+                    } else {
+                        lastError = result.error || 'Terjadi kesalahan pada server.';
+                        toast.error('Checkout gagal', { description: lastError });
+                        setProcessing(false);
+                        return; // Server validation error — don't retry
+                    }
+                } else if (response.status === 422) {
+                    // Validation error from server — don't retry
+                    const errorData = await response.json();
+                    lastError = errorData.error || errorData.message || 'Validasi gagal.';
+                    toast.error('Checkout gagal', { description: lastError });
+                    setProcessing(false);
+                    return;
+                } else {
+                    lastError = `Server error (${response.status})`;
+                    throw new Error(lastError);
+                }
+            } catch (err: any) {
+                lastError = err?.message || 'Network error';
+                if (attempt < 3) {
+                    // Exponential backoff: 1s, 2s
+                    const delay = attempt * 1000;
+                    toast.loading(`Retry checkout... (${attempt}/3)`, { duration: delay });
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+
+        // All retries failed — save to pending queue
+        pendingStore.addTransaction(payload, localSaleData);
+        toast.warning('Checkout gagal setelah 3 percobaan', {
+            description: 'Transaksi disimpan ke antrian offline. Akan otomatis disinkronkan saat koneksi pulih.',
+            duration: 8000,
         });
+        resetAfterCheckout();
     };
+
+    // ─── Reset state after checkout ────────────────────────────────
+    const resetAfterCheckout = () => {
+        cart.clearCart();
+        setSearch('');
+        setSelectedCategory(null);
+        setShowCheckout(false);
+        setPaidAmount('');
+        setNotes('');
+        setGlobalDiscount('0');
+        setSelectedCustomer(null);
+        setProcessing(false);
+    };
+
+    // ─── Sync pending transactions ─────────────────────────────────
+    const handleSyncPending = useCallback(async () => {
+        const pending = pendingStore.transactions.filter(
+            t => t.status === 'pending' || t.status === 'failed'
+        );
+        if (pending.length === 0 || isSyncing) return;
+
+        setIsSyncing(true);
+        let syncedCount = 0;
+        let failedCount = 0;
+
+        for (const txn of pending) {
+            pendingStore.updateStatus(txn.id, 'syncing');
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const response = await fetch('/api/pos/offline-sync', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || '',
+                    },
+                    body: JSON.stringify({ ...txn.payload, pending_id: txn.id }),
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        pendingStore.updateStatus(txn.id, 'synced');
+                        syncedCount++;
+                    } else {
+                        pendingStore.updateStatus(txn.id, 'failed', result.error);
+                        pendingStore.incrementRetry(txn.id);
+                        failedCount++;
+                    }
+                } else {
+                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                    pendingStore.updateStatus(txn.id, 'failed', errorData.error);
+                    pendingStore.incrementRetry(txn.id);
+                    failedCount++;
+                }
+            } catch (err: any) {
+                pendingStore.updateStatus(txn.id, 'failed', err?.message || 'Network error');
+                pendingStore.incrementRetry(txn.id);
+                failedCount++;
+            }
+        }
+
+        // Clean up synced transactions
+        pendingStore.clearSynced();
+        setIsSyncing(false);
+
+        if (syncedCount > 0) {
+            toast.success(`${syncedCount} transaksi berhasil disinkronkan`);
+            router.reload({ only: ['products', 'activePromotions'] });
+        }
+        if (failedCount > 0) {
+            toast.error(`${failedCount} transaksi gagal disinkronkan`, {
+                description: 'Akan dicoba lagi secara otomatis.',
+            });
+        }
+    }, [pendingStore, isSyncing]);
 
 
 
@@ -658,7 +835,14 @@ export default function POS() {
                                 </div>
                             )}
 
-                            <div className="flex-shrink-0 flex items-center">
+                            <div className="flex-shrink-0 flex items-center gap-2">
+                                <NetworkStatusBar 
+                                    isOnline={networkStatus.isOnline} 
+                                    wasOffline={networkStatus.wasOffline}
+                                    pendingCount={pendingStore.getPendingCount()}
+                                    onSyncPending={handleSyncPending}
+                                    isSyncing={isSyncing}
+                                />
                                 <PrinterStatusIndicator settings={app_settings as any} />
                             </div>
 

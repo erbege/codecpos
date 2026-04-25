@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\OfflineSyncController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -46,6 +47,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/pos/checkout', [SaleController::class, 'store'])->name('pos.checkout');
     Route::post('/pos/set-outlet', [SaleController::class, 'setOutlet'])->name('pos.set-outlet');
     Route::get('/api/pos/customers/search', [SaleController::class, 'searchCustomers'])->name('api.pos.customers.search');
+
+    // POS Offline Resilience
+    Route::get('/api/ping', [OfflineSyncController::class, 'ping'])->name('api.ping');
+    Route::post('/api/pos/offline-sync', [OfflineSyncController::class, 'syncTransaction'])->name('api.pos.offline-sync');
 
     // Sales History
     Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
