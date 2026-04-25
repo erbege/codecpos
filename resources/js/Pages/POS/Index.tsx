@@ -83,7 +83,7 @@ const formatCurrency = (value: number) => {
 export default function POS() {
     const { auth, flash, products, categories, customers, taxRate, taxPerItem, outlets, currentOutletId, canSwitchOutlet, users, app_settings, activePromotions } = usePage<Props>().props;
     const cart = useCartStore();
-    const { posViewMode, setPosViewMode } = useAppStore();
+    const { posViewMode, setPosViewMode, confirm: appConfirm, closeDialog } = useAppStore();
     const [search, setSearch] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
     const [showCheckout, setShowCheckout] = useState(false);
@@ -107,6 +107,7 @@ export default function POS() {
     });
 
     const [showSwitchUserModal, setShowSwitchUserModal] = useState(false);
+    const [showTaxDetails, setShowTaxDetails] = useState(false);
     const enableShiftManagement = app_settings?.enable_shift_management ?? true;
 
     const openCustomerModal = () => {
@@ -331,12 +332,22 @@ export default function POS() {
                 e.preventDefault();
                 searchRef.current?.focus();
             }
+            if (e.key === 'F4') {
+                e.preventDefault();
+                setShowTaxDetails(prev => !prev);
+            }
             if (e.key === 'F5') { // Shortcut to clear cart
                 e.preventDefault();
-                if (confirm('Kosongkan keranjang?')) {
-                    cart.clearCart();
-                    toast.success('Keranjang dikosongkan');
-                }
+                appConfirm({
+                    title: 'Kosongkan Keranjang',
+                    message: 'Apakah Anda yakin ingin menghapus semua item di keranjang?',
+                    confirmLabel: 'Ya, Kosongkan',
+                    type: 'danger',
+                    onConfirm: () => {
+                        cart.clearCart();
+                        toast.success('Keranjang dikosongkan');
+                    }
+                });
             }
             if (e.key === 'F8') {
                 e.preventDefault();
@@ -854,7 +865,21 @@ export default function POS() {
                             <ShoppingCart className="w-4 h-4 text-indigo-500" />
                             <h3 className="font-semibold text-gray-900 dark:text-white text-xs uppercase tracking-wider">Keranjang</h3>
                         </div>
-                        <button onClick={() => { if (confirm('Kosongkan keranjang?')) cart.clearCart() }} className="text-[10px] text-gray-400 hover:text-red-500 transition-colors font-semibold uppercase tracking-tight">Hapus [F5]</button>
+                        <button 
+                            onClick={() => appConfirm({
+                                title: 'Kosongkan Keranjang',
+                                message: 'Apakah Anda yakin ingin menghapus semua item di keranjang?',
+                                confirmLabel: 'Ya, Kosongkan',
+                                type: 'danger',
+                                onConfirm: () => {
+                                    cart.clearCart();
+                                    toast.success('Keranjang dikosongkan');
+                                }
+                            })} 
+                            className="text-[10px] text-gray-400 hover:text-red-500 transition-colors font-semibold uppercase tracking-tight"
+                        >
+                            Hapus [F5]
+                        </button>
                     </div>
 
                     <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-2">
@@ -982,15 +1007,19 @@ export default function POS() {
 
                     <div className="p-3 bg-gray-50 dark:bg-slate-900 border-t border-gray-200 dark:border-gray-800 space-y-2">
                         <div className="space-y-1">
-                            <div className="flex justify-between text-xs font-semibold text-gray-500 uppercase">
-                                <span>DPP {taxPerItem ? '(Dasar Pajak)' : ''}</span>
-                                <span>{formatCurrency(displaySubtotal)}</span>
-                            </div>
-                            {taxRate > 0 && (
-                                <div className="flex justify-between text-xs font-semibold text-gray-500 uppercase">
-                                    <span>PPN ({taxRate}%)</span>
-                                    <span>{formatCurrency(taxAmount)}</span>
-                                </div>
+                            {showTaxDetails && (
+                                <>
+                                    <div className="flex justify-between text-xs font-semibold text-gray-500 uppercase animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <span>DPP {taxPerItem ? '(Dasar Pajak)' : ''}</span>
+                                        <span>{formatCurrency(displaySubtotal)}</span>
+                                    </div>
+                                    {taxRate > 0 && (
+                                        <div className="flex justify-between text-xs font-semibold text-gray-500 uppercase animate-in fade-in slide-in-from-top-1 duration-200">
+                                            <span>PPN ({taxRate}%)</span>
+                                            <span>{formatCurrency(taxAmount)}</span>
+                                        </div>
+                                    )}
+                                </>
                             )}
                             
                             {/* Promo Discount Summary */}
@@ -1013,7 +1042,14 @@ export default function POS() {
                                 </div>
                             )}
                             <div className="flex justify-between text-xl font-bold text-gray-900 dark:text-white border-t-2 border-dashed border-gray-200 dark:border-gray-800 pt-2 mt-2">
-                                <span>TOTAL</span>
+                                <button 
+                                    onClick={() => setShowTaxDetails(!showTaxDetails)}
+                                    className="flex flex-col items-start hover:text-indigo-600 transition-colors group"
+                                    title="Toggle Pajak (F4)"
+                                >
+                                    <span>TOTAL</span>
+                                    <span className="text-[8px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-0.5 group-hover:text-indigo-400">{showTaxDetails ? 'Sembunyikan Pajak' : 'Tampilkan Pajak'} [F4]</span>
+                                </button>
                                 <span className="text-indigo-600 dark:text-indigo-400">{formatCurrency(total)}</span>
                             </div>
                         </div>
