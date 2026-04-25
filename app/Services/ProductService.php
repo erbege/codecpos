@@ -170,34 +170,36 @@ class ProductService
             ]);
 
             // Update Current Outlet Settings for Product
-            $setting = \App\Models\OutletProductSetting::where([
-                'outlet_id' => $currentOutletId,
-                'product_id' => $product->id,
-                'product_variant_id' => null
-            ])->first();
-
-            $newStock = $data['stock'] ?? 0;
-            if ($setting && $setting->stock != $newStock) {
-                \App\Models\StockMovement::create([
-                    'product_id' => $product->id,
-                    'product_variant_id' => null,
+            if ($currentOutletId) {
+                $setting = \App\Models\OutletProductSetting::where([
                     'outlet_id' => $currentOutletId,
-                    'type' => 'adjustment',
-                    'quantity' => $newStock - $setting->stock,
-                    'reference_type' => 'update',
-                    'notes' => 'Pembaruan stok via edit produk',
-                    'user_id' => \Illuminate\Support\Facades\Auth::id(),
-                ]);
-            }
+                    'product_id' => $product->id,
+                    'product_variant_id' => null
+                ])->first();
 
-            \App\Models\OutletProductSetting::updateOrCreate(
-                ['outlet_id' => $currentOutletId, 'product_id' => $product->id, 'product_variant_id' => null],
-                [
-                    'stock' => $newStock,
-                    'min_stock' => $data['min_stock'] ?? 0,
-                    'price' => $data['price'] ?? null,
-                ]
-            );
+                $newStock = $data['stock'] ?? 0;
+                if ($setting && $setting->stock != $newStock) {
+                    \App\Models\StockMovement::create([
+                        'product_id' => $product->id,
+                        'product_variant_id' => null,
+                        'outlet_id' => $currentOutletId,
+                        'type' => 'adjustment',
+                        'quantity' => $newStock - $setting->stock,
+                        'reference_type' => 'update',
+                        'notes' => 'Pembaruan stok via edit produk',
+                        'user_id' => \Illuminate\Support\Facades\Auth::id(),
+                    ]);
+                }
+
+                \App\Models\OutletProductSetting::updateOrCreate(
+                    ['outlet_id' => $currentOutletId, 'product_id' => $product->id, 'product_variant_id' => null],
+                    [
+                        'stock' => $newStock,
+                        'min_stock' => $data['min_stock'] ?? 0,
+                        'price' => $data['price'] ?? null,
+                    ]
+                );
+            }
 
             if ($data['has_variants'] ?? false) {
                 $keptVariantIds = collect($data['variants'] ?? [])
@@ -227,13 +229,15 @@ class ProductService
                             ]);
 
                             // Update current outlet setting for variant
-                            \App\Models\OutletProductSetting::updateOrCreate(
-                                ['outlet_id' => $currentOutletId, 'product_id' => $product->id, 'product_variant_id' => $variant->id],
-                                [
-                                    'stock' => $variantData['stock'] ?? 0,
-                                    'price' => $variantData['price'] ?? null,
-                                ]
-                            );
+                            if ($currentOutletId) {
+                                \App\Models\OutletProductSetting::updateOrCreate(
+                                    ['outlet_id' => $currentOutletId, 'product_id' => $product->id, 'product_variant_id' => $variant->id],
+                                    [
+                                        'stock' => $variantData['stock'] ?? 0,
+                                        'price' => $variantData['price'] ?? null,
+                                    ]
+                                );
+                            }
                         } else {
                             // Create new
                             $variant = $product->variants()->create([
