@@ -28,10 +28,8 @@ export default function Guest({ children, maxWidth = 'max-w-md', showCard = true
                 {/* Branding */}
                 {showBranding && (
                     <div className="flex flex-col items-center mb-8 animate-fade-in-down">
-                        <Link href="/" className="flex items-center gap-3">
-                            <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-2xl shadow-indigo-500/20 transform rotate-3 transition-transform hover:rotate-0">
-                                <Code className="w-8 h-8 text-white stroke-[2.5]" />
-                            </div>
+                        <Link href="/" className="flex items-center justify-center">
+                            <img src="/images/logo.png" alt="Logo" className="w-24 h-auto drop-shadow-xl mb-2" />
                         </Link>
                         <div className="mt-4 text-center">
                             <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">Codec<span className="text-indigo-600">POS</span></h1>

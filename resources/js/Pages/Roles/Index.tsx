@@ -9,6 +9,7 @@ import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import { toast } from 'sonner';
+import { useAppStore } from '@/stores/useAppStore';
 
 interface Permission {
     id: number;
@@ -28,6 +29,7 @@ interface Props extends PageProps {
 
 export default function RoleIndex() {
     const { roles, permissions } = usePage<Props>().props;
+    const { confirm: appConfirm } = useAppStore();
     
     // State for creating a NEW role
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -97,12 +99,19 @@ export default function RoleIndex() {
     };
 
     const handleDeleteRole = (role: Role) => {
-        if (!confirm(`Apakah Anda yakin ingin menghapus peran "${role.name.toUpperCase()}"? Tindakan ini tidak dapat dibatalkan.`)) return;
-
-        const form = useForm({});
-        form.delete(route('roles.destroy', role.id), {
-            onSuccess: () => toast.success('Peran berhasil dihapus.'),
-            onError: (errors: any) => toast.error(errors.error || 'Gagal menghapus peran.')
+        appConfirm({
+            title: 'Hapus Peran',
+            message: `Apakah Anda yakin ingin menghapus peran "${role.name.toUpperCase()}"? Tindakan ini tidak dapat dibatalkan.`,
+            confirmLabel: 'Ya, Hapus',
+            cancelLabel: 'Batal',
+            type: 'danger',
+            onConfirm: () => {
+                const form = useForm({});
+                form.delete(route('roles.destroy', role.id), {
+                    onSuccess: () => toast.success('Peran berhasil dihapus.'),
+                    onError: (errors: any) => toast.error(errors.error || 'Gagal menghapus peran.')
+                });
+            }
         });
     };
 

@@ -22,6 +22,7 @@ import {
     Copy,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useAppStore } from '@/stores/useAppStore';
 
 interface Promotion {
     id: number;
@@ -81,6 +82,7 @@ const getStatusConfig = (promo: Promotion) => {
 
 export default function PromotionsIndex() {
     const { promotions, filters } = usePage<Props>().props;
+    const { confirm: appConfirm } = useAppStore();
     const [search, setSearch] = useState(filters.search || '');
 
     const handleFilter = (key: string, value: string | null) => {
@@ -96,9 +98,15 @@ export default function PromotionsIndex() {
     };
 
     const handleToggle = (promo: Promotion) => {
-        if (confirm(`${promo.is_active ? 'Nonaktifkan' : 'Aktifkan'} promo "${promo.name}"?`)) {
-            router.post(`/promotions/${promo.id}/toggle`);
-        }
+        appConfirm({
+            title: promo.is_active ? 'Nonaktifkan Promo' : 'Aktifkan Promo',
+            message: `${promo.is_active ? 'Nonaktifkan' : 'Aktifkan'} promo "${promo.name}"?`,
+            confirmLabel: 'Ya, Lanjutkan',
+            cancelLabel: 'Batal',
+            onConfirm: () => {
+                router.post(`/promotions/${promo.id}/toggle`);
+            }
+        });
     };
 
     const handleDelete = (promo: Promotion) => {
@@ -106,9 +114,16 @@ export default function PromotionsIndex() {
             ? `Promo "${promo.name}" sudah digunakan ${promo.usage_count} kali. Promo akan dinonaktifkan (bukan dihapus) untuk menjaga audit trail. Lanjutkan?`
             : `Hapus promo "${promo.name}"? Tindakan ini tidak dapat dibatalkan.`;
 
-        if (confirm(msg)) {
-            router.delete(`/promotions/${promo.id}`);
-        }
+        appConfirm({
+            title: 'Hapus Promo',
+            message: msg,
+            confirmLabel: promo.usage_count > 0 ? 'Ya, Nonaktifkan' : 'Ya, Hapus',
+            cancelLabel: 'Batal',
+            type: promo.usage_count > 0 ? 'info' : 'danger',
+            onConfirm: () => {
+                router.delete(`/promotions/${promo.id}`);
+            }
+        });
     };
 
     const statusFilters = [

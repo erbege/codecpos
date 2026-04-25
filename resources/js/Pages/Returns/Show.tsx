@@ -3,6 +3,8 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import { ArrowLeft, Printer, RotateCcw, AlertTriangle, Calendar, User, Receipt, Package, ArrowRight } from 'lucide-react';
 
+import ThermalReturnReceipt from '@/Components/ThermalReturnReceipt';
+
 interface Props extends PageProps {
     saleReturn: any;
 }
@@ -23,6 +25,8 @@ export default function ReturnsShow() {
     return (
         <AuthenticatedLayout>
             <Head title={`Detail Retur ${saleReturn.return_number}`} />
+            
+            <ThermalReturnReceipt saleReturn={saleReturn} />
 
             <div className="max-w-5xl mx-auto space-y-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-2">
