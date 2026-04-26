@@ -7,6 +7,10 @@ use App\Http\Requests\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\ProductService;
+use App\Exports\ProductExport;
+use App\Imports\ProductImport;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -85,5 +89,38 @@ class ProductController extends Controller
 
         return redirect()->route('products.index')
             ->with('success', 'Produk berhasil dihapus.');
+    }
+
+    public function export()
+    {
+        $this->authorize('products.read');
+        
+        $filename = 'products-' . now()->format('Y-m-d-His') . '.xlsx';
+        
+        return Excel::download(new ProductExport(request()->all()), $filename);
+    }
+
+    public function import(Request $request)
+    {
+        $this->authorize('products.create');
+
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:2048',
+        ]);
+
+        $import = new ProductImport;
+        Excel::import($import, $request->file('file'));
+
+        $results = $import->getResults();
+        
+        $message = "Impor selesai. {$results['success']} baru, {$results['updated']} diperbarui.";
+        if ($results['failed'] > 0) {
+            $message .= " {$results['failed']} gagal.";
+        }
+
+        return redirect()->back()->with([
+            'success' => $message,
+            'import_errors' => $results['errors']
+        ]);
     }
 }

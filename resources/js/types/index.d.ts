@@ -158,6 +158,7 @@ export type PageProps<
     flash: {
         success?: string;
         error?: string;
+        import_errors?: string[];
     };
     app_settings: {
         shop_name?: string;

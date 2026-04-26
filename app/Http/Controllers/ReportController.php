@@ -40,11 +40,12 @@ class ReportController extends Controller
             ->first();
 
         // Stock Summary
-        $totalStockValue = Product::whereHas('outletSettings', function ($q) use ($outletId) {
-            if ($outletId) $q->where('outlet_id', $outletId);
-        })->get()->sum(function ($p) {
-            return $p->stock * ($p->cost_price ?? 0);
-        });
+        $totalStockValue = DB::table('outlet_product_settings')
+            ->join('products', 'products.id', '=', 'outlet_product_settings.product_id')
+            ->when($outletId, fn($q) => $q->where('outlet_product_settings.outlet_id', $outletId))
+            ->where('outlet_product_settings.is_active', true)
+            ->selectRaw('SUM(outlet_product_settings.stock * COALESCE(products.cost_price, 0)) as total_value')
+            ->value('total_value') ?? 0;
 
         $lowStockCount = Product::where('stock', '<=', DB::raw('min_stock'))->count();
 

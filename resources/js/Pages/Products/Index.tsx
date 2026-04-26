@@ -1,9 +1,12 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { PageProps, Product, Category, PaginatedData } from '@/types';
+import { PageProps, Product, Category, PaginatedData, ProductVariant } from '@/types';
 import { useAppStore } from '@/stores/useAppStore';
-import { Plus, Search, Edit2, Trash2, AlertTriangle, Package } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, AlertTriangle, Package, Download, Upload, FileText, X } from 'lucide-react';
 import { useState } from 'react';
+import Modal from '@/Components/Modal';
+import PrimaryButton from '@/Components/PrimaryButton';
+import SecondaryButton from '@/Components/SecondaryButton';
 
 interface Props extends PageProps {
     products: PaginatedData<Product>;
@@ -19,12 +22,12 @@ const formatCurrency = (value: number) => {
 };
 
 export default function ProductIndex() {
-    const { products, categories, filters } = usePage<Props>().props;
+    const { products, categories, filters, flash } = usePage<Props>().props;
     const [search, setSearch] = useState(filters.search || '');
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        router.get('/products', { search }, { preserveState: true, preserveScroll: true });
+        router.get('/products', { ...filters, search }, { preserveState: true, preserveScroll: true });
     };
 
     const confirm = useAppStore(state => state.confirm);
@@ -42,6 +45,35 @@ export default function ProductIndex() {
         });
     };
 
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [isImporting, setIsImporting] = useState(false);
+
+    const handleExport = () => {
+        const queryParams = new URLSearchParams({
+            search: filters.search || '',
+            category_id: filters.category_id || '',
+        }).toString();
+        window.location.href = `/products/export?${queryParams}`;
+    };
+
+    const handleImport = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!importFile) return;
+
+        setIsImporting(true);
+        const formData = new FormData();
+        formData.append('file', importFile);
+
+        router.post('/products/import', formData, {
+            onFinish: () => {
+                setIsImporting(false);
+                setShowImportModal(false);
+                setImportFile(null);
+            },
+        });
+    };
+
     return (
         <AuthenticatedLayout>
             <Head title="Produk" />
@@ -52,12 +84,26 @@ export default function ProductIndex() {
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Katalog Produk</h1>
                         <p className="text-sm text-gray-500 font-medium">Manajemen Inventaris Sepeda & Suku Cadang</p>
                     </div>
-                    <Link
-                        href="/products/create"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-bold text-xs hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-500/20 uppercase tracking-widest"
-                    >
-                        <Plus className="w-3.5 h-3.5" /> PRODUK BARU
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleExport}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 text-white font-bold text-xs hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 uppercase tracking-widest"
+                        >
+                            <Download className="w-3.5 h-3.5" /> EKSPOR
+                        </button>
+                        <button
+                            onClick={() => setShowImportModal(true)}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 text-white font-bold text-xs hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20 uppercase tracking-widest"
+                        >
+                            <Upload className="w-3.5 h-3.5" /> IMPOR
+                        </button>
+                        <Link
+                            href="/products/create"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-bold text-xs hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-500/20 uppercase tracking-widest"
+                        >
+                            <Plus className="w-3.5 h-3.5" /> PRODUK BARU
+                        </Link>
+                    </div>
                 </div>
 
                 {/* Search & Filter */}
@@ -83,6 +129,23 @@ export default function ProductIndex() {
                         ))}
                     </select>
                 </div>
+
+                {/* Import Errors */}
+                {flash.import_errors && (flash.import_errors as string[]).length > 0 && (
+                    <div className="p-4 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20">
+                        <div className="flex items-center gap-2 mb-2 text-red-600 dark:text-red-400">
+                            <AlertTriangle className="w-4 h-4" />
+                            <h3 className="text-xs font-bold uppercase tracking-tight">Detail Kesalahan Impor</h3>
+                        </div>
+                        <ul className="space-y-1">
+                            {(flash.import_errors as string[]).map((error, idx) => (
+                                <li key={idx} className="text-[11px] text-red-500 dark:text-red-400 font-medium">
+                                    • {error}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
 
                 {/* Table */}
                 <div className="rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
@@ -132,7 +195,7 @@ export default function ProductIndex() {
                                         </td>
                                         <td className="px-5 py-4 text-right">
                                             {product.has_variants ? (
-                                                <span className="text-gray-500 font-semibold">{product.variants?.reduce((acc: number, v: any) => acc + v.stock, 0) || 0}</span>
+                                                <span className="text-gray-500 font-semibold">{product.variants?.reduce((acc: number, v: ProductVariant) => acc + v.stock, 0) || 0}</span>
                                             ) : (
                                                 <div className="flex items-center justify-end gap-1.5">
                                                     {product.stock <= product.min_stock && (
@@ -211,6 +274,60 @@ export default function ProductIndex() {
                     )}
                 </div>
             </div>
+
+            <Modal show={showImportModal} onClose={() => !isImporting && setShowImportModal(false)} maxWidth="md">
+                <form onSubmit={handleImport} className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-tight">Impor Produk</h2>
+                        <button type="button" onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-gray-500">
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="p-4 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
+                            <p className="text-xs text-indigo-700 dark:text-indigo-300 leading-relaxed font-medium">
+                                Gunakan file Excel (.xlsx atau .xls) untuk mengimpor data produk. Pastikan format kolom sesuai dengan template standar.
+                            </p>
+                        </div>
+
+                        <div 
+                            className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center hover:border-indigo-500 transition-colors cursor-pointer"
+                            onClick={() => document.getElementById('file-upload')?.click()}
+                        >
+                            <input
+                                id="file-upload"
+                                type="file"
+                                className="hidden"
+                                accept=".xlsx,.xls,.csv"
+                                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                            />
+                            {importFile ? (
+                                <div className="flex flex-col items-center">
+                                    <FileText className="w-10 h-10 text-indigo-500 mb-2" />
+                                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate max-w-full px-4">{importFile.name}</p>
+                                    <p className="text-xs text-gray-500 mt-1">{(importFile.size / 1024).toFixed(2)} KB</p>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center">
+                                    <Upload className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-2" />
+                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Klik untuk memilih file atau seret file ke sini</p>
+                                    <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-bold">XLSX, XLS, CSV (MAX. 2MB)</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-3">
+                        <SecondaryButton onClick={() => setShowImportModal(false)} disabled={isImporting}>
+                            BATAL
+                        </SecondaryButton>
+                        <PrimaryButton disabled={!importFile || isImporting}>
+                            {isImporting ? 'MEMPROSES...' : 'MULAI IMPOR'}
+                        </PrimaryButton>
+                    </div>
+                </form>
+            </Modal>
         </AuthenticatedLayout>
     );
 }

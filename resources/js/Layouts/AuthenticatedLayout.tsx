@@ -41,6 +41,15 @@ export default function AuthenticatedLayout({ children }: PropsWithChildren) {
         return auth.permissions?.includes(permission);
     };
 
+    useEffect(() => {
+        if (flash.success) {
+            toast.success(flash.success);
+        }
+        if (flash.error) {
+            toast.error(flash.error);
+        }
+    }, [flash]);
+
     interface NavItem {
         name: string;
         href: string;
