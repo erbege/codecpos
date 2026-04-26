@@ -84,9 +84,14 @@ class ProductService
             // Register product to ALL outlets
             $outlets = \App\Models\Outlet::all();
             $currentOutletId = \Illuminate\Support\Facades\Auth::user()->outlet_id;
+            if ($currentOutletId === 'null' || $currentOutletId === 0 || $currentOutletId === '0') {
+                $currentOutletId = null;
+            }
 
             foreach ($outlets as $outlet) {
                 $stock = ($outlet->id == $currentOutletId) ? ($data['stock'] ?? 0) : 0;
+
+                if (!$outlet->id) continue;
 
                 \App\Models\OutletProductSetting::create([
                     'outlet_id' => $outlet->id,
@@ -130,6 +135,8 @@ class ProductService
 
                     // Register variant to ALL outlets
                     foreach ($outlets as $outlet) {
+                        if (!$outlet->id) continue;
+                        
                         \App\Models\OutletProductSetting::create([
                             'outlet_id' => $outlet->id,
                             'product_id' => $product->id,
@@ -149,6 +156,9 @@ class ProductService
     {
         return DB::transaction(function () use ($product, $data) {
             $currentOutletId = \Illuminate\Support\Facades\Auth::user()->outlet_id;
+            if ($currentOutletId === 'null' || $currentOutletId === 0 || $currentOutletId === '0') {
+                $currentOutletId = null;
+            }
 
             if (isset($data['image']) && $data['image'] instanceof UploadedFile) {
                 if ($product->image) {
@@ -250,6 +260,8 @@ class ProductService
 
                             // Register to all outlets
                             foreach ($outlets as $outlet) {
+                                if (!$outlet->id) continue;
+                                
                                 \App\Models\OutletProductSetting::create([
                                     'outlet_id' => $outlet->id,
                                     'product_id' => $product->id,
