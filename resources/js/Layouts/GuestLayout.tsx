@@ -17,7 +17,7 @@ export default function Guest({ children, maxWidth = 'max-w-md', showCard = true
     }, []);
 
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 py-8 selection:bg-indigo-500/30 transition-colors duration-500">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 selection:bg-indigo-500/30 transition-colors duration-500">
             {/* Background Decorative Element */}
             <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20 dark:opacity-40">
                 <div className="absolute -top-24 -left-24 w-96 h-96 bg-indigo-600 rounded-full blur-[120px]" />
@@ -54,9 +54,9 @@ export default function Guest({ children, maxWidth = 'max-w-md', showCard = true
                 )}
 
                 {/* Footer Link */}
-                <p className="mt-8 text-center text-slate-500 text-xs font-bold uppercase tracking-widest">
+                {/* <p className="mt-8 text-center text-slate-500 text-xs font-bold uppercase tracking-widest">
                     &copy; {new Date().getFullYear()} CodeCrafter POS
-                </p>
+                </p> */}
             </div>
         </div>
     );
