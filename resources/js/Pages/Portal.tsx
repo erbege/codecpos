@@ -45,17 +45,30 @@ export default function Portal({ quote: serverQuote }: Props) {
     // Inisialisasi dengan kutipan dari server atau fallback lokal jika tidak ada
     const [quote, setQuote] = useState(serverQuote || FALLBACK_QUOTES[0]);
 
-    // Tidak perlu lagi useEffect fetchQuote karena sudah ditangani di Backend (PHP)
-    // Hal ini mencegah error CORS di browser.
+    const [currentTime, setCurrentTime] = useState(new Date());
 
-    const currentDate = new Intl.DateTimeFormat("id-ID", {
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const formattedDate = new Intl.DateTimeFormat("id-ID", {
         day: "2-digit",
         month: "long",
         year: "numeric",
-    }).format(new Date());
+    }).format(currentTime);
+
+    const formattedTime = new Intl.DateTimeFormat("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+    }).format(currentTime);
 
     const getGreeting = () => {
-        const hour = new Date().getHours();
+        const hour = currentTime.getHours();
         let greeting = "";
         if (hour >= 0 && hour < 12) {
             greeting = "Selamat pagi";
@@ -159,14 +172,13 @@ export default function Portal({ quote: serverQuote }: Props) {
                                         </div>
                                         <div>
                                             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                                                BikeShop POS
+                                                CodeCrafter's
                                             </p>
                                             <h1 className="mt-1 text-lg font-black tracking-tight sm:text-2xl lg:text-[2rem] leading-tight">
                                                 CodecPOS
                                             </h1>
-                                            <p className="mt-1 text-sm text-slate-300">
-                                                Fast launcher for daily
-                                                operations.
+                                            <p className="mt-1 text-xs text-slate-300">
+                                                Modern Point of Sale System
                                             </p>
                                         </div>
                                     </div>
@@ -188,8 +200,11 @@ export default function Portal({ quote: serverQuote }: Props) {
                                         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-indigo-700 dark:text-indigo-300">
                                             Tanggal
                                         </p>
-                                        <p className="truncate text-sm font-black text-indigo-900 dark:text-indigo-100">
-                                            {currentDate}
+                                        <p className="text-sm font-black text-indigo-900 dark:text-indigo-100">
+                                            {formattedDate}
+                                        </p>
+                                        <p className="text-[11px] font-bold text-indigo-600/80 dark:text-indigo-400/80 font-mono">
+                                            {formattedTime}
                                         </p>
                                     </div>
                                 </div>
