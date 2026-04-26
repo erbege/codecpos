@@ -28,6 +28,9 @@ import {
     RotateCcw,
     ChevronLeft,
     ChevronRight,
+    ArrowLeftRight,
+    Pause,
+    History,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
@@ -38,6 +41,9 @@ import NumericInput from '@/Components/NumericInput';
 import SwitchUserModal from '@/Components/SwitchUserModal';
 import PrinterStatusIndicator from '@/Components/PrinterStatusIndicator';
 import NetworkStatusBar from '@/Components/NetworkStatusBar';
+import PendingTransactionsModal from '@/Components/PendingTransactionsModal';
+import HeldOrdersModal from '@/Components/HeldOrdersModal';
+import { useHoldOrderStore, HeldOrder } from '@/stores/useHoldOrderStore';
 
 interface Props extends PageProps {
     products: Product[];
@@ -113,6 +119,8 @@ export default function POS() {
     });
 
     const [showSwitchUserModal, setShowSwitchUserModal] = useState(false);
+    const [showPendingModal, setShowPendingModal] = useState(false);
+    const [showHoldModal, setShowHoldModal] = useState(false);
     const [showTaxDetails, setShowTaxDetails] = useState(false);
     const enableShiftManagement = app_settings?.enable_shift_management ?? true;
 
@@ -626,7 +634,8 @@ export default function POS() {
             change: Number(change || 0),
             payment_method: paymentMethod,
             created_at: new Date().toISOString(),
-            outlet: (auth as any)?.user?.outlet || null
+            outlet: (auth as any)?.user?.outlet || null,
+            is_offline: true
         };
     }, [cart.items, customers, selectedCustomer, subtotal, totalGlobalDiscount, taxAmount, total, paidAmount, change, paymentMethod, auth]);
 
@@ -642,7 +651,8 @@ export default function POS() {
         // If clearly offline, queue immediately
         if (!networkStatus.isOnline) {
             pendingStore.addTransaction(payload, localSaleData);
-            toast.warning('Transaksi disimpan ke antrian offline', {
+            setCompletedSale(localSaleData); // Show success/print receipt even offline
+            toast.warning('Offline: Transaksi disimpan ke antrian', {
                 description: 'Akan disinkronkan otomatis saat koneksi pulih.',
                 duration: 5000,
             });
@@ -703,7 +713,8 @@ export default function POS() {
 
         // All retries failed — save to pending queue
         pendingStore.addTransaction(payload, localSaleData);
-        toast.warning('Checkout gagal setelah 3 percobaan', {
+        setCompletedSale(localSaleData);
+        toast.warning('Checkout gagal (Network Error)', {
             description: 'Transaksi disimpan ke antrian offline. Akan otomatis disinkronkan saat koneksi pulih.',
             duration: 8000,
         });
@@ -840,22 +851,38 @@ export default function POS() {
                                     isOnline={networkStatus.isOnline} 
                                     wasOffline={networkStatus.wasOffline}
                                     pendingCount={pendingStore.getPendingCount()}
-                                    onSyncPending={handleSyncPending}
+                                    onSyncPending={() => setShowPendingModal(true)}
                                     isSyncing={isSyncing}
                                 />
                                 <PrinterStatusIndicator settings={app_settings as any} />
-                            </div>
 
-                            {/* Ganti Shift Button (Only when shift management is disabled) */}
-                            {!enableShiftManagement && (
-                                <button
-                                    onClick={() => setShowSwitchUserModal(true)}
-                                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-500 text-white text-xs font-black uppercase tracking-wider hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 whitespace-nowrap"
-                                >
-                                    <Users className="w-4 h-4" />
-                                    Ganti Kasir
-                                </button>
-                            )}
+                                {/* Ganti Shift Button (Only when shift management is disabled) */}
+                                {!enableShiftManagement && (
+                                    <button
+                                        onClick={() => setShowSwitchUserModal(true)}
+                                        className="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+                                        title="Ganti Kasir"
+                                    >
+                                        <ArrowLeftRight className="w-5 h-5" />
+                                    </button>
+                                )}
+
+                                {/* Held Orders Button */}
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowHoldModal(true)}
+                                        className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20 active:scale-95"
+                                        title="Daftar Pesanan Tertahan"
+                                    >
+                                        <History className="w-5 h-5" />
+                                    </button>
+                                    {useHoldOrderStore.getState().heldOrders.length > 0 && (
+                                        <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-600 text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-gray-950 pointer-events-none">
+                                            {useHoldOrderStore.getState().heldOrders.length}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                         <div className="flex items-center justify-between gap-4">
                             <div className="relative flex-1 min-w-0 group">
@@ -1237,13 +1264,37 @@ export default function POS() {
                                 <span className="text-indigo-600 dark:text-indigo-400">{formatCurrency(total)}</span>
                             </div>
                         </div>
-                        <button
-                            onClick={() => setShowCheckout(true)}
-                            disabled={cart.items.length === 0}
-                            className="w-full py-3.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 shadow-md active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-wider"
-                        >
-                            <CreditCard className="w-4 h-4" /> BAYAR SEKARANG [F9]
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => {
+                                    if (cart.items.length === 0) return;
+                                    const customerObj = customers.find(c => c.id === Number(selectedCustomer));
+                                    useHoldOrderStore.getState().holdOrder({
+                                        customer_id: selectedCustomer,
+                                        customer_name: customerObj?.name || 'Guest / Umum',
+                                        items: cart.items,
+                                        subtotal: cart.getSubtotal(),
+                                        notes: notes,
+                                    });
+                                    cart.clearCart();
+                                    setSelectedCustomer(null);
+                                    setNotes('');
+                                    toast.success('Pesanan ditahan');
+                                }}
+                                disabled={cart.items.length === 0}
+                                className="flex-1 py-4 rounded-xl bg-amber-500 text-white font-black text-xs hover:bg-amber-600 shadow-lg shadow-amber-500/20 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-widest border-b-4 border-amber-700"
+                                title="Tahan Pesanan"
+                            >
+                                <Pause className="w-4 h-4 fill-current" /> TAHAN
+                            </button>
+                            <button
+                                onClick={() => setShowCheckout(true)}
+                                disabled={cart.items.length === 0}
+                                className="flex-[2] py-4 rounded-xl bg-indigo-600 text-white font-black text-xs hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-widest border-b-4 border-indigo-800"
+                            >
+                                <CreditCard className="w-5 h-5" /> BAYAR [F9]
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1635,6 +1686,32 @@ export default function POS() {
                 show={showSwitchUserModal}
                 onClose={() => setShowSwitchUserModal(false)}
                 users={users}
+            />
+
+            <PendingTransactionsModal
+                show={showPendingModal}
+                onClose={() => setShowPendingModal(false)}
+                onSync={handleSyncPending}
+                isSyncing={isSyncing}
+            />
+
+            <HeldOrdersModal
+                show={showHoldModal}
+                onClose={() => setShowHoldModal(false)}
+                onRestore={(order) => {
+                    // Restore to cart
+                    cart.clearCart();
+                    order.items.forEach(item => {
+                        // We use a simplified loop because cart.addItem handles existing items
+                        // But here we want to restore exact state
+                    });
+                    // Actually, let's manually set the state to be safe
+                    useCartStore.setState({ items: order.items, selectedIndex: 0 });
+                    setSelectedCustomer(order.customer_id);
+                    setNotes(order.notes);
+                    setShowHoldModal(false);
+                    toast.success('Pesanan dikembalikan ke keranjang');
+                }}
             />
         </AuthenticatedLayout>
     );

@@ -27,14 +27,12 @@ export default function NetworkStatusBar({
             {/* Compact inline indicator (always visible) */}
             <div className="flex items-center gap-1.5">
                 {isOnline ? (
-                    <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20" title="Koneksi stabil">
-                        <Wifi className="w-3 h-3 text-emerald-500" />
-                        <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Online</span>
+                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20" title="Koneksi Online">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
                     </div>
                 ) : (
-                    <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 animate-pulse" title="Koneksi terputus">
-                        <WifiOff className="w-3 h-3 text-red-500" />
-                        <span className="text-[9px] font-black text-red-600 dark:text-red-400 uppercase tracking-wider">Offline</span>
+                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 animate-pulse" title="Koneksi Offline">
+                        <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>
                     </div>
                 )}
 

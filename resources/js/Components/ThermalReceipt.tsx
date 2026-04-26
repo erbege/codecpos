@@ -50,6 +50,11 @@ export default function ThermalReceipt({ sale }: Props) {
             
             {/* Header */}
             <div className="text-center mb-4 pt-4">
+                {(sale as any)?.is_offline && (
+                    <div className="border-2 border-black p-1 mb-2 font-black text-[12px] animate-pulse">
+                        OFFLINE / PENDING
+                    </div>
+                )}
                 <h1 className="text-[14px] font-black uppercase mb-0.5">{app_settings?.shop_name || sale?.outlet?.name || 'CODECPOS'}</h1>
                 <p className="text-[9px] mb-0.5">{sale?.outlet?.address || app_settings?.shop_address || 'Alamat Toko'}</p>
                 <div className="text-[9px] space-y-0.5 mt-1">
