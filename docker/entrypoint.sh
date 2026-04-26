@@ -1,32 +1,14 @@
 #!/bin/sh
-# === docker/entrypoint.sh ===
+set -e
 
-# Fix Permissions
-chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache || true
+chmod -R 775 /var/www/storage /var/www/bootstrap/cache || true
 
-# SINKRONISASI FILE KE VOLUME (PENTING AGAR NGINX BISA BACA)
-echo "Syncing files to volumes..."
-mkdir -p /var/www/public/build
-cp -ra /var/www/public/build_tmp/. /var/www/public/build/
-cp -ra /var/www/public_tmp/. /var/www/public/
-chown -R www-data:www-data /var/www/public
+php artisan optimize:clear || true
+php artisan migrate --force || true
+php artisan config:cache || true
+php artisan route:cache || true
+php artisan view:cache || true
 
-# Tunggu DB
-echo "Waiting for database..."
-until nc -z -v -w30 $DB_HOST ${DB_PORT:-3306}; do
-  sleep 2
-done
-
-# Artisan commands
-php artisan package:discover --ansi
-php artisan migrate --force
-php artisan storage:link --force || true
-
-if [ "$APP_ENV" = "production" ]; then
-    php artisan config:cache
-    php artisan route:cache
-    php artisan view:cache
-fi
-
-exec php-fpm
+supervisord -c /etc/supervisord.conf
 

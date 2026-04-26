@@ -1,37 +1,96 @@
-# === Dockerfile ===
-FROM node:20-alpine as build-stage
+# ========================
+# 1. Vendor (Composer)
+# ========================
+FROM php:8.3-cli AS vendor
+
 WORKDIR /app
-COPY package*.json ./
-RUN npm install --legacy-peer-deps
+
+# Install system deps + PHP extensions
+RUN apt-get update && apt-get install -y \
+    git unzip \
+    libpng-dev libjpeg-dev libfreetype6-dev \
+    libzip-dev \
+    libonig-dev \
+    autoconf \
+    g++ \
+    make \
+    pkg-config \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd zip mbstring
+
+# Install Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Copy dependency files
+COPY composer.json composer.lock ./
+
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --optimize-autoloader \
+    --no-scripts
+
+# Copy full source
 COPY . .
+
+RUN composer dump-autoload --optimize --no-dev  --no-scripts
+
+# ========================
+# 2. Frontend Build (Node 24)
+# ========================
+FROM node:24 AS frontend
+
+WORKDIR /app
+
+# Pastikan npm v11 (default biasanya sudah v11 di Node 24, tapi kita paksa biar konsisten)
+RUN npm install -g npm@11
+
+COPY package.json package-lock.json ./
+
+RUN npm ci
+
+COPY . .
+
 RUN npm run build
 
-FROM php:8.3-fpm-alpine
-RUN apk add --no-cache \
-    libpng-dev libjpeg-turbo-dev freetype-dev libzip-dev \
-    zip unzip git curl oniguruma-dev libxml2-dev icu-dev
+# ========================
+# 3. Final (PHP-FPM)
+# ========================
+FROM php:8.3-fpm
 
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-    pdo_mysql mbstring exif pcntl bcmath gd zip intl opcache dom xml
+WORKDIR /var/www/html
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-WORKDIR /var/www
-COPY docker/php/php.ini /usr/local/etc/php/conf.d/app-php.ini
+# Install system deps + PHP extensions
+RUN apt-get update && apt-get install -y \
+    nginx \
+    supervisor \
+    libpng-dev libjpeg-dev libfreetype6-dev \
+    libzip-dev \
+    libonig-dev \
+    curl \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install \
+    pdo \
+    pdo_mysql \
+    mbstring \
+    zip \
+    exif \
+    pcntl \
+    bcmath \
+    gd
 
-# 1. Copy seluruh kode ke dalam image
-COPY . .
+# Copy app
+COPY --from=vendor --chown=www-data:www-data /app /var/www/html
+COPY --from=frontend --chown=www-data:www-data /app/public/build /var/www/html/public/build
 
-# 2. Install vendor di dalam image
-RUN composer install --no-interaction --no-dev --optimize-autoloader --no-scripts
+# Permissions
+#RUN chown -R www-data:www-data /var/www/html \
+# && chmod -R 775 storage bootstrap/cache
+RUN mkdir -p storage bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
-# 3. Siapkan aset untuk disinkronkan nanti
-COPY --from=build-stage /app/public/build /var/www/public/build_tmp
-RUN cp -r public /var/www/public_tmp
-
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
-ENTRYPOINT ["entrypoint.sh"]
 EXPOSE 9000
+
 CMD ["php-fpm"]
+
